@@ -1,47 +1,38 @@
 advent_of_code::solution!(1);
-use std::collections::{HashMap, HashSet};
 
-use advent_of_code::helpers::*;
 use itertools::Itertools;
 
 pub fn part_one(input: &str) -> Option<i64> {
-    let l: Vec<(i64, i64)> = input
+    let (mut left, mut right): (Vec<_>, Vec<_>) = input
         .lines()
         .map(|l| l.split_once("   ").unwrap())
-        .map(|(n1, n2)| (n1.parse().unwrap(), n2.parse().unwrap()))
-        .collect();
+        .map(|(n1, n2)| (n1.parse::<i64>().unwrap(), n2.parse::<i64>().unwrap()))
+        .unzip();
 
-    let mut v1 = l.iter().map(|(x, y)| x).collect_vec();
-    let mut v2 = l.iter().map(|(x, y)| y).collect_vec();
-    v1.sort();
-    v2.sort();
+    left.sort();
+    right.sort();
+
     Some(
-        v1.into_iter()
-            .zip(v2.iter())
-            .map(|(x, y)| (*x - *y).abs())
+        left.into_iter()
+            .zip(right.into_iter())
+            .map(|(x, y)| (x - y).abs())
             .sum(),
     )
 }
 
 pub fn part_two(input: &str) -> Option<i64> {
-    let l: Vec<(i64, i64)> = input
+    let (mut left, right): (Vec<_>, Vec<_>) = input
         .lines()
         .map(|l| l.split_once("   ").unwrap())
-        .map(|(n1, n2)| (n1.parse().unwrap(), n2.parse().unwrap()))
-        .collect();
+        .map(|(n1, n2)| (n1.parse::<i64>().unwrap(), n2.parse::<i64>().unwrap()))
+        .unzip();
 
-    let mut v1 = l.iter().map(|(x, y)| x).collect_vec();
-    let mut v2: HashMap<i64, i64> = Default::default();
-
-    for (_, n) in l.clone() {
-        *v2.entry(n).or_default() += 1;
-    }
-
-    println!("{:?}", v2);
+    left.sort();
+    let right = right.into_iter().counts();
 
     Some(
-        v1.into_iter()
-            .map(|n| n * v2.get(n).cloned().unwrap_or(0))
+        left.into_iter()
+            .map(|n| n * right.get(&n).cloned().unwrap_or(0) as i64)
             .sum(),
     )
 }
