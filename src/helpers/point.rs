@@ -9,9 +9,9 @@ pub struct GenericPoint<N: Num + Clone + Copy> {
 }
 
 /// 2d point backed by i64
-pub type Point = GenericPoint<i64>;
-/// 2d point backed by usize
-pub type SizedPoint = GenericPoint<usize>;
+pub type SignedPoint = GenericPoint<i64>;
+/// 2d point backed by usize (which is basically always a u64)
+pub type Point = GenericPoint<usize>;
 /// 2d point backed by num::BigInt for arbitrary sized numbers
 pub type BIPoint = GenericPoint<BigInt>;
 
@@ -49,21 +49,18 @@ impl<N: Num + Clone + Copy> GenericPoint<N> {
         num::abs(self.x - rhs.x) + num::abs(self.y - rhs.y)
     }
 
-    pub fn as_sized(self) -> Option<SizedPoint>
+    pub fn as_point(self) -> Option<Point>
     where
         N: NumCast,
     {
         let x: usize = num::cast(self.x)?;
         let y: usize = num::cast(self.y)?;
 
-        Some(SizedPoint { x, y })
+        Some(Point { x, y })
     }
 }
 
-impl<N> Neg for GenericPoint<N>
-where
-    N: Num + Clone + Copy + Neg<Output = N>,
-{
+impl<N: Num + Clone + Copy + Neg<Output = N>> Neg for GenericPoint<N> {
     type Output = GenericPoint<N>;
 
     fn neg(self) -> Self::Output {

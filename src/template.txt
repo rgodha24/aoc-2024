@@ -1,11 +1,11 @@
 advent_of_code::solution!(%DAY_NUMBER%);
 use advent_of_code::helpers::*;
 
-pub fn part_one(input: &str) -> Option<u32> {
+pub fn part_one(input: &str) -> Option<i64> {
     None
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
+pub fn part_two(input: &str) -> Option<i64> {
     None
 }
 

@@ -21,16 +21,16 @@ impl<T> Grid<T> {
         Self { data }
     }
 
-    pub fn flat_iter(&self) -> impl Iterator<Item = (&T, SizedPoint)> {
+    pub fn flat_iter(&self) -> impl Iterator<Item = (&T, Point)> {
         self.iter().enumerate().flat_map(|(y, row)| {
             row.iter()
                 .enumerate()
-                .map(move |(x, col)| (col, SizedPoint::new(x, y)))
+                .map(move |(x, col)| (col, Point::new(x, y)))
         })
     }
 
-    pub fn points(&self) -> impl Iterator<Item = SizedPoint> {
-        itertools::iproduct!(0..self.width(), 0..self.height()).map(|(x, y)| SizedPoint::new(x, y))
+    pub fn points(&self) -> impl Iterator<Item = Point> {
+        itertools::iproduct!(0..self.width(), 0..self.height()).map(|(x, y)| Point::new(x, y))
     }
 
     pub fn width(&self) -> usize {
@@ -44,7 +44,7 @@ impl<T> Grid<T> {
         Self { data }
     }
 
-    pub fn contains_point(&self, point: SizedPoint) -> bool {
+    pub fn contains_point(&self, point: Point) -> bool {
         point.x < self.width() && point.y < self.height()
     }
 
@@ -62,83 +62,79 @@ impl<T> Grid<T> {
     }
 
     /// iterates over the grid, allowing for mutations
-    pub fn for_each_mut(&mut self, f: impl Fn(&mut T, SizedPoint)) {
+    pub fn for_each_mut(&mut self, f: impl Fn(&mut T, Point)) {
         for (y, row) in self.iter_mut().enumerate() {
             for (x, col) in row.iter_mut().enumerate() {
-                f(col, SizedPoint::new(x, y));
+                f(col, Point::new(x, y));
             }
         }
     }
 
     /// iterates over grid, immutably
-    pub fn for_each(&self, mut f: impl FnMut(&T, SizedPoint)) {
+    pub fn for_each(&self, mut f: impl FnMut(&T, Point)) {
         for (y, row) in self.iter().enumerate() {
             for (x, col) in row.iter().enumerate() {
-                f(col, SizedPoint::new(x, y));
+                f(col, Point::new(x, y));
             }
         }
     }
 
-    pub fn neighbors_of(&self, p: SizedPoint) -> Vec<SizedPoint> {
+    pub fn neighbors_of(&self, p: Point) -> Vec<Point> {
         let mut neighbors = Vec::new();
-        let SizedPoint { x, y } = p;
+        let Point { x, y } = p;
         if x > 0 {
-            neighbors.push(SizedPoint::new(x - 1, y));
+            neighbors.push(Point::new(x - 1, y));
         }
         if y > 0 {
-            neighbors.push(SizedPoint::new(x, y - 1));
+            neighbors.push(Point::new(x, y - 1));
         }
 
         let width = self.width();
         let height = self.height();
 
         if x < width - 1 {
-            neighbors.push(SizedPoint::new(x + 1, y));
+            neighbors.push(Point::new(x + 1, y));
         }
         if y < height - 1 {
-            neighbors.push(SizedPoint::new(x, y + 1));
+            neighbors.push(Point::new(x, y + 1));
         }
         neighbors
     }
 
-    pub fn neighbors_of_diagonal(&self, p: SizedPoint) -> Vec<SizedPoint> {
+    pub fn neighbors_of_diagonal(&self, p: Point) -> Vec<Point> {
         let mut neighbors = Vec::new();
         let width = self.width();
         let height = self.height();
-        let SizedPoint { x, y } = p;
+        let Point { x, y } = p;
         if x > 0 {
-            neighbors.push(SizedPoint::new(x - 1, y));
+            neighbors.push(Point::new(x - 1, y));
         }
         if y > 0 {
-            neighbors.push(SizedPoint::new(x, y - 1));
+            neighbors.push(Point::new(x, y - 1));
         }
         if x < width - 1 {
-            neighbors.push(SizedPoint::new(x + 1, y));
+            neighbors.push(Point::new(x + 1, y));
         }
         if y < height - 1 {
-            neighbors.push(SizedPoint::new(x, y + 1));
+            neighbors.push(Point::new(x, y + 1));
         }
         if x > 0 && y > 0 {
-            neighbors.push(SizedPoint::new(x - 1, y - 1));
+            neighbors.push(Point::new(x - 1, y - 1));
         }
         if x < width - 1 && y > 0 {
-            neighbors.push(SizedPoint::new(x + 1, y - 1));
+            neighbors.push(Point::new(x + 1, y - 1));
         }
         if x > 0 && y < height - 1 {
-            neighbors.push(SizedPoint::new(x - 1, y + 1));
+            neighbors.push(Point::new(x - 1, y + 1));
         }
         if x < width - 1 && y < height - 1 {
-            neighbors.push(SizedPoint::new(x + 1, y + 1));
+            neighbors.push(Point::new(x + 1, y + 1));
         }
 
         neighbors
     }
 
-    pub fn neighbors_of_filtered(
-        &self,
-        p: SizedPoint,
-        f: impl Fn(&T, &SizedPoint) -> bool,
-    ) -> Vec<SizedPoint> {
+    pub fn neighbors_of_filtered(&self, p: Point, f: impl Fn(&T, &Point) -> bool) -> Vec<Point> {
         self.neighbors_of(p)
             .into_iter()
             .filter(|p| f(&self[*p], p))
@@ -147,9 +143,9 @@ impl<T> Grid<T> {
 
     pub fn neighbors_of_diagonal_filtered(
         &self,
-        p: SizedPoint,
-        f: impl Fn(&T, &SizedPoint) -> bool,
-    ) -> Vec<SizedPoint> {
+        p: Point,
+        f: impl Fn(&T, &Point) -> bool,
+    ) -> Vec<Point> {
         self.neighbors_of_diagonal(p)
             .into_iter()
             .filter(|p| f(&self[*p], p))
@@ -206,22 +202,22 @@ impl<T> Grid<T> {
     }
 
     /// returns an iterator of the points in the grid at the specified x coordinate
-    pub fn y_points_at(&self, x: usize) -> impl Iterator<Item = SizedPoint> {
-        (0..self.height()).map(move |y| SizedPoint::new(x, y))
+    pub fn y_points_at(&self, x: usize) -> impl Iterator<Item = Point> {
+        (0..self.height()).map(move |y| Point::new(x, y))
     }
 
     /// returns an iterator of the points in the grid at the specified y coordinate
-    pub fn x_points_at(&self, y: usize) -> impl Iterator<Item = SizedPoint> {
-        (0..self.width()).map(move |x| SizedPoint::new(x, y))
+    pub fn x_points_at(&self, y: usize) -> impl Iterator<Item = Point> {
+        (0..self.width()).map(move |x| Point::new(x, y))
     }
 
     /// returns the count of the number of items in the grid that match the predicate
-    pub fn count(&self, f: impl Fn(&T, &SizedPoint) -> bool) -> usize {
+    pub fn count(&self, f: impl Fn(&T, &Point) -> bool) -> usize {
         self.flat_iter().filter(|(t, p)| f(t, p)).count()
     }
 
-    pub fn get_wrapping(&self, p: SizedPoint) -> &T {
-        let SizedPoint { x, y } = p;
+    pub fn get_wrapping(&self, p: Point) -> &T {
+        let Point { x, y } = p;
         let width = self.width();
         let height = self.height();
         &self.data[y.rem_euclid(height) as usize][x.rem_euclid(width) as usize]
@@ -313,11 +309,11 @@ impl<T> Grid<T> {
     }
 
     /// maps over self to create a new Grid
-    pub fn map<K: Clone + Default>(&self, f: impl Fn(&T, SizedPoint) -> K) -> Grid<K> {
+    pub fn map<K: Clone + Default>(&self, f: impl Fn(&T, Point) -> K) -> Grid<K> {
         let mut new_data = self.empty_sized();
         for (y, row) in self.data.iter().enumerate() {
             for (x, col) in row.iter().enumerate() {
-                let p = SizedPoint::new(x, y);
+                let p = Point::new(x, y);
                 new_data[p] = f(col, p);
             }
         }
@@ -325,16 +321,16 @@ impl<T> Grid<T> {
     }
 }
 
-impl<T> Index<SizedPoint> for Grid<T> {
+impl<T> Index<Point> for Grid<T> {
     type Output = T;
 
-    fn index(&self, index: SizedPoint) -> &Self::Output {
+    fn index(&self, index: Point) -> &Self::Output {
         &self.data[index.y][index.x]
     }
 }
 
-impl<T> IndexMut<SizedPoint> for Grid<T> {
-    fn index_mut(&mut self, index: SizedPoint) -> &mut Self::Output {
+impl<T> IndexMut<Point> for Grid<T> {
+    fn index_mut(&mut self, index: Point) -> &mut Self::Output {
         &mut self.data[index.y][index.x]
     }
 }
@@ -354,17 +350,17 @@ where
     }
 }
 
-impl<T> From<HashMap<SizedPoint, T>> for Grid<T>
+impl<T> From<HashMap<Point, T>> for Grid<T>
 where
     T: Default + Clone,
 {
-    fn from(value: HashMap<SizedPoint, T>) -> Self {
+    fn from(value: HashMap<Point, T>) -> Self {
         let min_x = value.keys().map(|p| p.x).min().unwrap_or(0);
         let min_y = value.keys().map(|p| p.y).min().unwrap_or(0);
         let max_x = value.keys().map(|p| p.x).max().unwrap_or(0);
         let max_y = value.keys().map(|p| p.y).max().unwrap_or(0);
 
-        let min = SizedPoint::new(min_x, min_y);
+        let min = Point::new(min_x, min_y);
 
         let mut data = Grid::empty((max_x - min_x + 1) as usize, (max_y - min_y + 1) as usize);
         for (k, v) in value.into_iter() {
@@ -375,14 +371,14 @@ where
     }
 }
 
-impl From<HashSet<SizedPoint>> for Grid<bool> {
-    fn from(value: HashSet<SizedPoint>) -> Self {
+impl From<HashSet<Point>> for Grid<bool> {
+    fn from(value: HashSet<Point>) -> Self {
         let min_x = value.iter().map(|p| p.x).min().unwrap_or(0);
         let min_y = value.iter().map(|p| p.y).min().unwrap_or(0);
         let max_x = value.iter().map(|p| p.x).max().unwrap_or(0);
         let max_y = value.iter().map(|p| p.y).max().unwrap_or(0);
 
-        let min = SizedPoint::new(min_x, min_y);
+        let min = Point::new(min_x, min_y);
 
         let mut data = Grid::empty((max_x - min_x + 1) as usize, (max_y - min_y + 1) as usize);
         for k in value.into_iter() {
