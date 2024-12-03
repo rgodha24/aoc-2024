@@ -1,58 +1,56 @@
 advent_of_code::solution!(3);
 use itertools::Itertools;
-use regex::Regex;
+use pest::Parser;
+use pest_derive::Parser;
 
-pub fn part_one(input: &str) -> Option<i64> {
-    let re = Regex::new(r#"mul\(\d+,\d+\)"#).expect("regex compiles");
+#[derive(Parser)]
+#[grammar_inline = r#"
+num = { ('0'..'9')+ }
+
+mul  = { "mul(" ~ num ~ "," ~ num ~ ")" }
+do   = { "do()" }
+dont = { "don't()" }
+
+input = { (mul | do | dont | ANY)+ ~ EOI }
+"#]
+struct Day3Parser;
+
+fn solve(input: &str, ignore_conditionals: bool) -> i64 {
+    let mut enabled = true;
     let mut sum = 0;
-    for s in re.find_iter(input) {
-        let s = s.as_str().replace("mul(", "").replace(")", "");
-        let (n1, n2) = s.split_once(",").unwrap();
-        let n1: i64 = n1.parse().unwrap();
-        let n2: i64 = n2.parse().unwrap();
+    let input_rule = Day3Parser::parse(Rule::input, input)
+        .unwrap()
+        .next()
+        .expect("input rule first");
 
-        sum += n1 * n2;
-    }
+    for instruction in input_rule.into_inner() {
+        match instruction.as_rule() {
+            Rule::mul => {
+                if ignore_conditionals || enabled {
+                    let (n1, n2) = instruction
+                        .into_inner()
+                        .map(|r| r.as_span().as_str().parse::<i64>().unwrap())
+                        .collect_tuple()
+                        .unwrap();
 
-    Some(sum)
-}
-
-pub fn part_two(input: &str) -> Option<i64> {
-    let re = Regex::new(r#"mul\(\d+,\d+\)"#).expect("regex compiles");
-    let mut sum = 0;
-
-    let dos = Regex::new(r#"do\(\)"#)
-        .expect("regex")
-        .find_iter(input)
-        .map(|m| m.start())
-        .collect_vec();
-    let donts = Regex::new(r#"don\'t\(\)"#)
-        .expect("regex")
-        .find_iter(input)
-        .map(|m| m.start())
-        .collect_vec();
-
-    for m in re.find_iter(input) {
-        let s = m.as_str().replace("mul(", "").replace(")", "");
-        let (n1, n2) = s.split_once(",").unwrap();
-        let n1: i64 = n1.parse().unwrap();
-        let n2: i64 = n2.parse().unwrap();
-
-        let start = m.start();
-        let max_do = dos.iter().filter(|&&d| d < start).max().cloned();
-        let max_dont = donts.iter().filter(|&&d| d < start).max().cloned();
-        match (max_do, max_dont) {
-            (Some(a), Some(b)) if a > b => {
-                sum += n1 * n2;
+                    sum += n1 * n2;
+                }
             }
-            (_, None) => {
-                sum += n1 * n2;
-            }
-            _ => {}
+            Rule::r#do => enabled = true,
+            Rule::dont => enabled = false,
+            _ => break,
         }
     }
 
-    Some(sum)
+    sum
+}
+
+pub fn part_one(input: &str) -> Option<i64> {
+    Some(solve(input, true))
+}
+
+pub fn part_two(input: &str) -> Option<i64> {
+    Some(solve(input, false))
 }
 
 #[cfg(test)]

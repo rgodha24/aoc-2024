@@ -30,4 +30,5 @@ tinyjson = "2.5.1"
 num = "0.4.3"
 derive_more = { version = "1.0.0", features = ["full"] }
 itertools = "0.13.0"
-regex = "1.11.1"
+pest = "2.7.14"
+pest_derive = "2.7.14"
