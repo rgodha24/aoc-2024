@@ -1,4 +1,7 @@
-use std::ops::{Add, Mul, Neg, Sub};
+use std::{
+    fmt::Display,
+    ops::{Add, Mul, Neg, Sub},
+};
 
 use num::{BigInt, Num, NumCast, Signed};
 /// a point in a 2d space
@@ -42,6 +45,15 @@ impl<N: Num + Clone + Copy> GenericPoint<N> {
         ]
     }
 
+    pub fn neighbors_just_diag(&self) -> [Self; 4] {
+        [
+            Self::new(self.x + N::one(), self.y - N::one()),
+            Self::new(self.x + N::one(), self.y + N::one()),
+            Self::new(self.x - N::one(), self.y + N::one()),
+            Self::new(self.x - N::one(), self.y - N::one()),
+        ]
+    }
+
     pub fn manhattan_distance(&self, rhs: &Self) -> N
     where
         N: Signed,
@@ -57,6 +69,28 @@ impl<N: Num + Clone + Copy> GenericPoint<N> {
         let y: usize = num::cast(self.y)?;
 
         Some(Point { x, y })
+    }
+    pub fn as_signed_point(self) -> SignedPoint
+    where
+        N: NumCast,
+    {
+        {
+            let x: i64 = num::cast(self.x).unwrap();
+            let y: i64 = num::cast(self.y).unwrap();
+
+            SignedPoint { x, y }
+        }
+    }
+
+    pub fn as_type<T>(self) -> GenericPoint<T>
+    where
+        N: NumCast,
+        T: Num + Clone + Copy + NumCast,
+    {
+        let x: T = num::cast(self.x).unwrap();
+        let y: T = num::cast(self.y).unwrap();
+
+        GenericPoint::new(x, y)
     }
 }
 
@@ -98,5 +132,14 @@ where
 
     fn mul(self, rhs: N) -> Self::Output {
         GenericPoint::new(self.x * rhs, self.y * rhs)
+    }
+}
+
+impl<N> Display for GenericPoint<N>
+where
+    N: Num + Clone + Copy + Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{},{}", self.x, self.y)
     }
 }

@@ -9,6 +9,7 @@ use std::{
 };
 
 use derive_more::{Deref, DerefMut};
+use num::NumCast;
 
 #[derive(Deref, DerefMut, Clone, PartialEq, Hash)]
 /// 2D grid of data stored in Row-Major order by default
@@ -29,8 +30,12 @@ impl<T> Grid<T> {
         })
     }
 
-    pub fn points(&self) -> impl Iterator<Item = Point> {
-        itertools::iproduct!(0..self.width(), 0..self.height()).map(|(x, y)| Point::new(x, y))
+    pub fn points<N>(&self) -> impl Iterator<Item = GenericPoint<N>>
+    where
+        N: Num + Clone + Copy + NumCast,
+    {
+        itertools::iproduct!(0..self.width(), 0..self.height())
+            .map(|(x, y)| Point::new(x, y).as_type())
     }
 
     pub fn width(&self) -> usize {
@@ -44,8 +49,14 @@ impl<T> Grid<T> {
         Self { data }
     }
 
-    pub fn contains_point(&self, point: Point) -> bool {
-        point.x < self.width() && point.y < self.height()
+    pub fn contains_point<N>(&self, point: GenericPoint<N>) -> bool
+    where
+        N: Num + Clone + Copy + Ord + NumCast,
+    {
+        point.x >= N::zero()
+            && point.y >= N::zero()
+            && point.x < num::cast(self.width()).unwrap()
+            && point.y < num::cast(self.height()).unwrap()
     }
 
     /// create a Grid from a string of characters
@@ -221,6 +232,15 @@ impl<T> Grid<T> {
         let width = self.width();
         let height = self.height();
         &self.data[y.rem_euclid(height) as usize][x.rem_euclid(width) as usize]
+    }
+
+    pub fn get<N: Num + Clone + Copy + NumCast>(&self, p: GenericPoint<N>) -> Option<&T> {
+        let point = p.as_point()?;
+        if self.contains_point(point) {
+            Some(&self[point])
+        } else {
+            None
+        }
     }
 
     // pub fn display_colored(&self, points: &[Point])

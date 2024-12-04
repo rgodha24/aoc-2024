@@ -68,10 +68,10 @@ impl Direction {
     }
 }
 
-impl<N: Num + Clone + Copy> Add<&Direction> for GenericPoint<N> {
+impl<N: Num + Clone + Copy> Add<Direction> for GenericPoint<N> {
     type Output = GenericPoint<N>;
 
-    fn add(self, rhs: &Direction) -> Self::Output {
+    fn add(self, rhs: Direction) -> Self::Output {
         match rhs {
             Direction::Up => GenericPoint::new(self.x, self.y - N::one()),
             Direction::Down => GenericPoint::new(self.x, self.y + N::one()),
@@ -81,10 +81,10 @@ impl<N: Num + Clone + Copy> Add<&Direction> for GenericPoint<N> {
     }
 }
 
-impl<N: Num + Clone + Copy> Sub<&Direction> for GenericPoint<N> {
+impl<N: Num + Clone + Copy> Sub<Direction> for GenericPoint<N> {
     type Output = GenericPoint<N>;
 
-    fn sub(self, rhs: &Direction) -> Self::Output {
+    fn sub(self, rhs: Direction) -> Self::Output {
         match rhs {
             Direction::Up => GenericPoint::new(self.x, self.y + N::one()),
             Direction::Down => GenericPoint::new(self.x, self.y - N::one()),
