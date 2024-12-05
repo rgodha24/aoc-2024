@@ -20,10 +20,11 @@ my solutions for [Advent of Code](https://adventofcode.com/) 2024 in [Rust](http
 
 | Day | Part 1 | Part 2 |
 | :---: | :---: | :---:  |
-| [Day 1](./src/bin/01.rs) | `42.8µs` | `59.4µs` |
-| [Day 2](./src/bin/02.rs) | `52.5µs` | `99.5µs` |
-| [Day 3](./src/bin/03.rs) | `260.4µs` | `235.1µs` |
+| [Day 1](./src/bin/01.rs) | `42.7µs` | `59.6µs` |
+| [Day 2](./src/bin/02.rs) | `46.6µs` | `70.2µs` |
+| [Day 3](./src/bin/03.rs) | `259.5µs` | `250.0µs` |
+| [Day 4](./src/bin/04.rs) | `99.0µs` | `77.9µs` |
 
-**Total: 0.75ms**
+**Total: 0.91ms**
 <!--- benchmarking table --->
 

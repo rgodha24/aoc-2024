@@ -3,8 +3,9 @@ use std::cmp::Ordering;
 
 use advent_of_code::helpers::*;
 use itertools::Itertools;
+use smallvec::SmallVec;
 
-pub fn safe(it: impl Iterator<Item = i32>) -> bool {
+fn safe(it: impl Iterator<Item = u8>) -> bool {
     let mut ordering = Ordering::Equal;
     it.tuple_windows().all(|(n1, n2)| {
         (match (n1.cmp(&n2), ordering) {
@@ -21,14 +22,14 @@ pub fn safe(it: impl Iterator<Item = i32>) -> bool {
     })
 }
 
-pub fn safe_dampened(v: &[i32]) -> bool {
+fn safe_dampened(v: &[u8]) -> bool {
     (0..v.len()).any(|i| {
         safe(
             v.iter()
                 // skips the ith object in the iterator
                 .enumerate()
                 .filter_map(|(j, n)| (j != i).then_some(n))
-                // we'd be iterating over &i32 without this
+                // we'd be iterating over &u8 without this
                 .copied(),
         )
     })
@@ -40,7 +41,7 @@ pub fn part_one(input: &str) -> Option<usize> {
         input
             .lines()
             .map(line_to_nums)
-            // .filter() takes &Iterator<Item = i32> as an argument to the function passed into it,
+            // .filter() takes &Iterator<Item = u8> as an argument to the function passed into it,
             // so instead we use filter_map and return Some(unit) when the line is safe
             .filter_map(|it| safe(it).then_some(()))
             .count(),
@@ -49,15 +50,19 @@ pub fn part_one(input: &str) -> Option<usize> {
 
 // O(l * n * n) where l is the number of lines, and n is the numbers per line
 pub fn part_two(input: &str) -> Option<usize> {
-    Some(
-        input
-            .lines()
-            // this allocation is not really avoidable, and the few ways of avoiding it probably
-            // would make this run slower than it already does
-            .map(|line| line_to_nums(line).collect_vec())
-            .filter_map(|v| safe_dampened(&v).then_some(()))
-            .count(),
-    )
+    let mut sum = 0;
+    // the largest line has 8 numbers on it
+    let mut arr: SmallVec<[u8; 8]> = SmallVec::new();
+
+    for line in input.lines() {
+        arr.extend(line_to_nums(line));
+        if safe_dampened(&arr) {
+            sum += 1;
+        }
+        arr.clear();
+    }
+
+    Some(sum)
 }
 
 #[cfg(test)]

@@ -231,7 +231,7 @@ impl<T> Grid<T> {
         let Point { x, y } = p;
         let width = self.width();
         let height = self.height();
-        &self.data[y.rem_euclid(height) as usize][x.rem_euclid(width) as usize]
+        &self.data[y.rem_euclid(height)][x.rem_euclid(width)]
     }
 
     pub fn get<N: Num + Clone + Copy + NumCast>(&self, p: GenericPoint<N>) -> Option<&T> {
@@ -382,7 +382,7 @@ where
 
         let min = Point::new(min_x, min_y);
 
-        let mut data = Grid::empty((max_x - min_x + 1) as usize, (max_y - min_y + 1) as usize);
+        let mut data = Grid::empty(max_x - min_x + 1, max_y - min_y + 1);
         for (k, v) in value.into_iter() {
             data[k - min] = v;
         }
@@ -400,7 +400,7 @@ impl From<HashSet<Point>> for Grid<bool> {
 
         let min = Point::new(min_x, min_y);
 
-        let mut data = Grid::empty((max_x - min_x + 1) as usize, (max_y - min_y + 1) as usize);
+        let mut data = Grid::empty(max_x - min_x + 1, max_y - min_y + 1);
         for k in value.into_iter() {
             data[k - min] = true;
         }

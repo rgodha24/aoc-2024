@@ -14,7 +14,7 @@ pub fn part_one(input: &str) -> Option<i64> {
 
     Some(
         left.into_iter()
-            .zip(right.into_iter())
+            .zip(right)
             .map(|(x, y)| (x - y).abs())
             .sum(),
     )
