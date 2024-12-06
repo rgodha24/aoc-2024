@@ -22,6 +22,10 @@ impl<T> Grid<T> {
         Self { data }
     }
 
+    pub fn into_inner(self) -> Vec<Vec<T>> {
+        self.data
+    }
+
     pub fn flat_iter(&self) -> impl Iterator<Item = (&T, Point)> {
         self.iter().enumerate().flat_map(|(y, row)| {
             row.iter()
