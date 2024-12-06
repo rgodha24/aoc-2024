@@ -1,11 +1,16 @@
 use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(u8)]
 pub enum Direction {
-    Right,
-    Left,
-    Up,
-    Down,
+    /// 1
+    Up = 0b0001,
+    /// 2
+    Right = 0b0010,
+    /// 4
+    Down = 0b0100,
+    /// 8
+    Left = 0b1000,
 }
 
 use num::Num;
@@ -20,6 +25,24 @@ impl Direction {
             Left => Right,
             Up => Down,
             Down => Up,
+        }
+    }
+
+    pub fn right(&self) -> Self {
+        match self {
+            Up => Right,
+            Right => Down,
+            Down => Left,
+            Left => Up,
+        }
+    }
+
+    pub fn left(&self) -> Self {
+        match self {
+            Up => Left,
+            Left => Down,
+            Down => Right,
+            Right => Up,
         }
     }
 
@@ -55,25 +78,6 @@ impl Direction {
         }
     }
 
-    pub fn from_number(num: usize) -> Self {
-        match num % 4 {
-            0 => Up,
-            1 => Right,
-            2 => Down,
-            3 => Left,
-            _ => unreachable!(),
-        }
-    }
-
-    pub fn to_number(self) -> usize {
-        match self {
-            Up => 0,
-            Right => 1,
-            Down => 2,
-            Left => 3,
-        }
-    }
-
     pub fn as_point<N>(&self) -> GenericPoint<N>
     where
         N: Num + Clone + Copy + Neg<Output = N>,
@@ -84,22 +88,6 @@ impl Direction {
             Up => GenericPoint::new(N::zero(), -N::one()),
             Down => GenericPoint::new(N::zero(), N::one()),
         }
-    }
-}
-
-impl Add<Direction> for Direction {
-    type Output = Direction;
-
-    fn add(self, rhs: Direction) -> Self::Output {
-        Direction::from_number(self.to_number() + rhs.to_number())
-    }
-}
-
-impl Sub<Direction> for Direction {
-    type Output = Direction;
-
-    fn sub(self, rhs: Direction) -> Self::Output {
-        Direction::from_number(self.to_number() - rhs.to_number())
     }
 }
 
