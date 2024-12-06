@@ -20,13 +20,13 @@ my solutions for [Advent of Code](https://adventofcode.com/) 2024 in [Rust](http
 
 | Day | Part 1 | Part 2 |
 | :---: | :---: | :---:  |
-| [Day 1](./src/bin/01.rs) | `42.7µs` | `59.6µs` |
-| [Day 2](./src/bin/02.rs) | `46.6µs` | `70.2µs` |
-| [Day 3](./src/bin/03.rs) | `259.5µs` | `250.0µs` |
-| [Day 4](./src/bin/04.rs) | `99.0µs` | `77.9µs` |
-| [Day 5](./src/bin/05.rs) | `232.6µs` | `937.8µs` |
-| [Day 6](./src/bin/06.rs) | `35.1µs` | `15.5ms` |
+| [Day 1](./src/bin/01.rs) | `40.8µs` | `60.4µs` |
+| [Day 2](./src/bin/02.rs) | `45.4µs` | `70.2µs` |
+| [Day 3](./src/bin/03.rs) | `253.7µs` | `247.2µs` |
+| [Day 4](./src/bin/04.rs) | `115.8µs` | `94.7µs` |
+| [Day 5](./src/bin/05.rs) | `298.0µs` | `1.0ms` |
+| [Day 6](./src/bin/06.rs) | `36.9µs` | `17.3ms` |
 
-**Total: 17.61ms**
+**Total: 19.56ms**
 <!--- benchmarking table --->
 
