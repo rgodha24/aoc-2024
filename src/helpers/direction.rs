@@ -55,6 +55,15 @@ impl Direction {
         }
     }
 
+    pub fn turn_right(&mut self) {
+        *self = match self {
+            Right => Down,
+            Down => Left,
+            Left => Up,
+            Up => Right,
+        }
+    }
+
     pub fn as_point<N>(&self) -> GenericPoint<N>
     where
         N: Num + Clone + Copy + Neg<Output = N>,

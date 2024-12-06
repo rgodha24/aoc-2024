@@ -35,7 +35,7 @@ impl<T> Grid<T> {
         N: Num + Clone + Copy + NumCast,
     {
         itertools::iproduct!(0..self.width(), 0..self.height())
-            .map(|(x, y)| Point::new(x, y).as_type())
+            .map(|(x, y)| Point::new(x, y).cast())
     }
 
     pub fn width(&self) -> usize {

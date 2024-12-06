@@ -82,7 +82,7 @@ impl<N: Num + Clone + Copy> GenericPoint<N> {
         }
     }
 
-    pub fn as_type<T>(self) -> GenericPoint<T>
+    pub fn cast<T>(self) -> GenericPoint<T>
     where
         N: NumCast,
         T: Num + Clone + Copy + NumCast,
