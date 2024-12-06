@@ -2,7 +2,7 @@ advent_of_code::solution!(6);
 
 use advent_of_code::helpers::*;
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Tile(u8);
 
 impl Tile {
@@ -29,7 +29,7 @@ impl Tile {
     }
 
     fn is_start(&self) -> bool {
-        self.0 & Self::START == Self::START
+        self.0 == Self::START
     }
 
     fn is_empty(&self) -> bool {
@@ -44,6 +44,7 @@ enum PathResult {
     Cycle,
     OffTheGrid, // by Kanye West???
 }
+use itertools::Itertools;
 use PathResult::*;
 
 /// returns None if the grid cycles, and returns Some(visited) if the path goes off the grid
@@ -93,16 +94,25 @@ pub fn part_two(input: &str) -> Option<usize> {
     let (mut grid, start) = parse(input);
     let mut cycled = 0;
 
+    let mut empty = grid.clone();
+    let obstacles = grid
+        .flat_iter()
+        .filter_map(|(tile, point)| tile.is_obstacle().then_some(point))
+        .collect_vec();
+
     follow_path(
         &mut grid,
         start,
         Direction::Up,
         |(grid, &point, &direction)| {
             if grid.get(point + direction).is_some_and(|t| t.is_empty()) {
-                let mut grid = grid.clone();
-                grid[point.cast() + direction] = Tile(Tile::OBSTACLE);
+                empty.fill(Tile(Tile::EMPTY));
+                for &o in &obstacles {
+                    empty[o] = Tile(Tile::OBSTACLE);
+                }
+                empty[point.cast() + direction] = Tile(Tile::OBSTACLE);
 
-                if follow_path(&mut grid, point.cast(), direction.right(), |_| {}) == Cycle {
+                if follow_path(&mut empty, point.cast(), direction.right(), |_| {}) == Cycle {
                     cycled += 1;
                 }
             }

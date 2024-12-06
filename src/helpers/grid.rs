@@ -1,14 +1,14 @@
 #![allow(dead_code)]
 
 use crate::helpers::*;
+use num::NumCast;
+use smallvec::{smallvec, SmallVec};
 use std::{
     collections::{HashMap, HashSet},
     default::Default,
     fmt::{Debug, Display},
     ops::{Index, IndexMut},
 };
-use num::NumCast;
-use smallvec::{SmallVec, smallvec};
 
 #[derive(Clone, PartialEq, Hash)]
 /// 2D grid of data stored in Row-Major order by default
@@ -95,7 +95,7 @@ impl<T, const W: usize> Grid<T, W> {
         }
     }
 
-    pub fn neighbors_of(&self, p: Point) -> SmallVec<[Point;4]> {
+    pub fn neighbors_of(&self, p: Point) -> SmallVec<[Point; 4]> {
         let mut neighbors = SmallVec::new();
         let Point { x, y } = p;
         if x > 0 {
@@ -247,6 +247,15 @@ impl<T, const W: usize> Grid<T, W> {
             None
         }
     }
+
+    pub fn fill(&mut self, with: T)
+    where
+        T: Copy,
+    {
+        for v in self.data.iter_mut() {
+            v.fill(with)
+        }
+    }
 }
 
 impl<T: Debug> Debug for Grid<T> {
@@ -376,7 +385,7 @@ where
     }
 }
 
-impl<const W: usize > From<HashSet<Point>> for Grid<bool, W> {
+impl<const W: usize> From<HashSet<Point>> for Grid<bool, W> {
     fn from(value: HashSet<Point>) -> Self {
         let min_x = value.iter().map(|p| p.x).min().unwrap_or(0);
         let min_y = value.iter().map(|p| p.y).min().unwrap_or(0);
