@@ -3,7 +3,6 @@ advent_of_code::solution!(6);
 use advent_of_code::helpers::*;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-#[repr(C)]
 struct Tile(u8);
 
 impl Tile {
@@ -38,6 +37,8 @@ impl Tile {
     }
 }
 
+type TileGrid = Grid<Tile, 130>;
+
 #[derive(Debug, PartialEq, Eq)]
 enum PathResult {
     Cycle,
@@ -47,10 +48,10 @@ use PathResult::*;
 
 /// returns None if the grid cycles, and returns Some(visited) if the path goes off the grid
 fn follow_path(
-    grid: &mut Grid<Tile>,
+    grid: &mut TileGrid,
     start: Point,
     mut direction: Direction,
-    mut for_each: impl FnMut((&Grid<Tile>, SignedPoint, &Direction)),
+    mut for_each: impl FnMut((&TileGrid, &SignedPoint, &Direction)),
 ) -> PathResult {
     let mut point = start.as_signed_point();
     loop {
@@ -63,7 +64,7 @@ fn follow_path(
                 direction = direction.right();
             }
             Some(_) => {
-                for_each((&grid, point, &direction));
+                for_each((&grid, &point, &direction));
                 point += direction;
             }
             None => {
@@ -96,7 +97,7 @@ pub fn part_two(input: &str) -> Option<usize> {
         &mut grid,
         start,
         Direction::Up,
-        |(grid, point, &direction)| {
+        |(grid, &point, &direction)| {
             if grid.get(point + direction).is_some_and(|t| t.is_empty()) {
                 let mut grid = grid.clone();
                 grid[point.cast() + direction] = Tile(Tile::OBSTACLE);
@@ -111,8 +112,8 @@ pub fn part_two(input: &str) -> Option<usize> {
     Some(cycled)
 }
 
-fn parse(input: &str) -> (Grid<Tile>, Point) {
-    let grid: Grid<Tile> = Grid::from_chars(input);
+fn parse(input: &str) -> (TileGrid, Point) {
+    let grid: TileGrid = Grid::from_chars(input);
 
     let start = grid
         .flat_iter()
