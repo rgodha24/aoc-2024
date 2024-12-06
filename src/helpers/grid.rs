@@ -12,18 +12,18 @@ use smallvec::{SmallVec, smallvec};
 
 #[derive(Clone, PartialEq, Hash)]
 /// 2D grid of data stored in Row-Major order by default
-pub struct Grid<T, const N: usize = 0> {
+pub struct Grid<T, const W: usize = 0> {
     // because the "union" feature on SmallVec is enabled, when N = 0, this takes up the same space
     // as a normal std::Vec
-    data: Vec<SmallVec<[T; N]>>,
+    data: Vec<SmallVec<[T; W]>>,
 }
 
-impl<T, const N: usize> Grid<T, N> {
-    pub fn new(data: Vec<SmallVec<[T; N]>>) -> Self {
+impl<T, const W: usize> Grid<T, W> {
+    pub fn new(data: Vec<SmallVec<[T; W]>>) -> Self {
         Self { data }
     }
 
-    pub fn into_inner(self) -> Vec<SmallVec<[T; N]>> {
+    pub fn into_inner(self) -> Vec<SmallVec<[T; W]>> {
         self.data
     }
 
@@ -49,7 +49,7 @@ impl<T, const N: usize> Grid<T, N> {
     pub fn height(&self) -> usize {
         self.data.len()
     }
-    pub fn from_lines(input: &str, line: impl Fn(&str) -> SmallVec<[T; N]>) -> Self {
+    pub fn from_lines(input: &str, line: impl Fn(&str) -> SmallVec<[T; W]>) -> Self {
         let data = input.lines().map(line).collect();
         Self { data }
     }
@@ -200,7 +200,7 @@ impl<T, const N: usize> Grid<T, N> {
         Grid { data }
     }
 
-    pub fn rows(&self) -> impl Iterator<Item = &SmallVec<[T; N]>> {
+    pub fn rows(&self) -> impl Iterator<Item = &SmallVec<[T; W]>> {
         self.data.iter()
     }
 
@@ -209,7 +209,7 @@ impl<T, const N: usize> Grid<T, N> {
         (0..width).map(move |i| self.data.iter().map(move |row| &row[i]).collect())
     }
 
-    pub fn row(&self, y: usize) -> &SmallVec<[T; N]> {
+    pub fn row(&self, y: usize) -> &SmallVec<[T; W]> {
         &self.data[y]
     }
 
@@ -255,7 +255,7 @@ impl<T: Debug> Debug for Grid<T> {
     }
 }
 
-impl<T: Clone + Default, const N: usize> Grid<T, N> {
+impl<T: Clone + Default, const W: usize> Grid<T, W> {
     /// swaps from Row-Major to Column-Major order
     /// and vice-versa
     pub fn swap_order(&mut self) {
@@ -296,9 +296,9 @@ impl<T: Clone + Default, const N: usize> Grid<T, N> {
     }
 }
 
-impl<T, const N: usize> Grid<T, N> {
+impl<T, const W: usize> Grid<T, W> {
     /// creates an empty grid with the same dimensions as self
-    pub fn empty_sized<K: Clone + Default>(&self) -> Grid<K, N> {
+    pub fn empty_sized<K: Clone + Default>(&self) -> Grid<K, W> {
         let data = vec![smallvec![Default::default(); self.width()]; self.height()];
 
         Grid { data }
@@ -314,7 +314,7 @@ impl<T, const N: usize> Grid<T, N> {
     }
 
     /// maps over self to create a new Grid
-    pub fn map<K: Clone + Default>(&self, f: impl Fn(&T, Point) -> K) -> Grid<K, N> {
+    pub fn map<K: Clone + Default>(&self, f: impl Fn(&T, Point) -> K) -> Grid<K, W> {
         let mut new_data = self.empty_sized();
         for (y, row) in self.data.iter().enumerate() {
             for (x, col) in row.iter().enumerate() {
@@ -326,7 +326,7 @@ impl<T, const N: usize> Grid<T, N> {
     }
 }
 
-impl<T, const N: usize> Index<Point> for Grid<T, N> {
+impl<T, const W: usize> Index<Point> for Grid<T, W> {
     type Output = T;
 
     fn index(&self, index: Point) -> &Self::Output {
@@ -334,13 +334,13 @@ impl<T, const N: usize> Index<Point> for Grid<T, N> {
     }
 }
 
-impl<T, const N: usize> IndexMut<Point> for Grid<T, N> {
+impl<T, const W: usize> IndexMut<Point> for Grid<T, W> {
     fn index_mut(&mut self, index: Point) -> &mut Self::Output {
         &mut self.data[index.y][index.x]
     }
 }
 
-impl<T, const N: usize> Display for Grid<T, N>
+impl<T, const W: usize> Display for Grid<T, W>
 where
     T: Display,
 {
@@ -355,7 +355,7 @@ where
     }
 }
 
-impl<T, const N: usize> From<HashMap<Point, T>> for Grid<T, N>
+impl<T, const W: usize> From<HashMap<Point, T>> for Grid<T, W>
 where
     T: Default + Clone,
 {
@@ -376,7 +376,7 @@ where
     }
 }
 
-impl<const N: usize > From<HashSet<Point>> for Grid<bool, N> {
+impl<const W: usize > From<HashSet<Point>> for Grid<bool, W> {
     fn from(value: HashSet<Point>) -> Self {
         let min_x = value.iter().map(|p| p.x).min().unwrap_or(0);
         let min_y = value.iter().map(|p| p.y).min().unwrap_or(0);
@@ -385,7 +385,7 @@ impl<const N: usize > From<HashSet<Point>> for Grid<bool, N> {
 
         let min = Point::new(min_x, min_y);
 
-        let mut data: Grid<bool, N> = Grid::empty(max_x - min_x + 1, max_y - min_y + 1);
+        let mut data: Grid<bool, W> = Grid::empty(max_x - min_x + 1, max_y - min_y + 1);
         for p in value.into_iter() {
             data[p - min] = true;
         }
