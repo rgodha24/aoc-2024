@@ -7,7 +7,6 @@ use advent_of_code::helpers::*;
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum Tile {
     Obstacle,
-    NewObstacle,
     Start,
     None,
     Visited(HashSet<Direction>),
@@ -18,7 +17,7 @@ impl Tile {
     fn visit(&mut self, direction: Direction) -> bool {
         match self {
             Tile::Visited(ref mut hs) => !hs.insert(direction),
-            Tile::Obstacle | Tile::NewObstacle => panic!("trying to visit an obstacle"),
+            Tile::Obstacle => panic!("trying to visit an obstacle"),
             _ => {
                 *self = Tile::Visited(HashSet::from([direction]));
                 false
@@ -28,6 +27,18 @@ impl Tile {
 
     fn is_visited(&self) -> bool {
         matches!(self, Tile::Visited(_))
+    }
+
+    fn is_obstacle(&self) -> bool {
+        matches!(self, Tile::Obstacle)
+    }
+
+    fn is_start(&self) -> bool {
+        matches!(self, Tile::Start)
+    }
+
+    fn is_empty(&self) -> bool {
+        matches!(self, Tile::None)
     }
 }
 
@@ -46,7 +57,7 @@ fn follow_path(
         }
 
         match grid.get(point + direction) {
-            Some(Tile::Obstacle | Tile::NewObstacle) => {
+            Some(t) if t.is_obstacle() => {
                 direction = direction.right();
             }
             Some(_) => {
@@ -67,38 +78,45 @@ fn follow_path(
 }
 
 pub fn part_one(input: &str) -> Option<NonZeroUsize> {
-    let mut grid: Grid<Tile> = Grid::from_chars(input);
-
-    let (_, start) = grid
-        .flat_iter()
-        .find(|(item, _)| **item == Tile::Start)
-        .unwrap();
+    let (mut grid, start) = parse(input);
 
     follow_path(&mut grid, start, Direction::Up, |_, _, _| {})
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    let mut grid: Grid<Tile> = Grid::from_chars(input);
+    let (mut grid, start) = parse(input);
+    let mut cycled = 0;
 
-    let (_, start) = grid
+    follow_path(
+        &mut grid,
+        start,
+        Direction::Up,
+        |grid, point, &direction| {
+            if grid.get(point + direction).is_some_and(|t| t.is_empty()) {
+                let mut grid = grid.clone();
+                grid[point.cast() + direction] = Tile::Obstacle;
+
+                let path = follow_path(&mut grid, point.cast(), direction.right(), |_, _, _| {});
+                // if a cycle is detected:
+                if path.is_none() {
+                    cycled += 1;
+                }
+            }
+        },
+    );
+
+    Some(cycled)
+}
+
+fn parse(input: &str) -> (Grid<Tile>, Point) {
+    let grid: Grid<Tile> = Grid::from_chars(input);
+
+    let start = grid
         .flat_iter()
-        .find(|(item, _)| **item == Tile::Start)
+        .find_map(|(item, point)| item.is_start().then_some(point))
         .unwrap();
 
-    let mut cycled = HashSet::new();
-    follow_path(&mut grid, start, Direction::Up, |grid, point, direction| {
-        let mut grid = grid.clone();
-        if !grid.contains_point(point + *direction) || grid[point.cast() + *direction].is_visited()
-        {
-            return;
-        }
-        grid[point.cast() + *direction] = Tile::NewObstacle;
-        let path = follow_path(&mut grid, point.cast(), direction.right(), |_, _, _| {});
-        if path.is_none() {
-            cycled.insert(point + *direction);
-        }
-    });
-    Some(cycled.len())
+    (grid, start)
 }
 
 impl From<char> for Tile {
@@ -108,17 +126,6 @@ impl From<char> for Tile {
             '^' => Self::Start,
             '#' => Self::Obstacle,
             _ => unreachable!(),
-        }
-    }
-}
-
-impl Display for Tile {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Tile::Obstacle => write!(f, "#"),
-            Tile::NewObstacle => write!(f, "O"),
-            Tile::Start | Tile::None => write!(f, "."),
-            Tile::Visited(_) => write!(f, "X"),
         }
     }
 }
