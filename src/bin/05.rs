@@ -11,11 +11,13 @@ fn parse(
 ) {
     let (ordering, updates) = input.split_once("\n\n").unwrap();
     let mut arr = [0; 90];
-    for o in ordering.lines() {
-        let x: usize = o[..2].parse().unwrap();
-        let y: usize = o[3..5].parse().unwrap();
-
-        arr[y - 10] |= 1 << x;
+    let ordering = ordering.as_bytes();
+    // each step will have `dd|ddn` where d is a digit, and n is a \n, which is 6 bytes long
+    for i in (0..ordering.len()).step_by(6) {
+        let x = (ordering[i] - b'0') * 10 + ordering[i + 1] - b'0';
+        // the extra -1 is to change `arr[y-10]` to `arr[y]`
+        let y = (ordering[i + 3] - b'0' - 1) * 10 + ordering[i + 4] - b'0';
+        arr[y as usize] |= 1 << x;
     }
 
     (
