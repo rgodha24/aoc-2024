@@ -1,11 +1,16 @@
 use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[repr(u8)]
 pub enum Direction {
-    Right,
-    Left,
-    Up,
-    Down,
+    /// 1
+    Up = 0b0001,
+    /// 2
+    Right = 0b0010,
+    /// 4
+    Down = 0b0100,
+    /// 8
+    Left = 0b1000,
 }
 
 use num::Num;
@@ -20,6 +25,24 @@ impl Direction {
             Left => Right,
             Up => Down,
             Down => Up,
+        }
+    }
+
+    pub fn right(&self) -> Self {
+        match self {
+            Up => Right,
+            Right => Down,
+            Down => Left,
+            Left => Up,
+        }
+    }
+
+    pub fn left(&self) -> Self {
+        match self {
+            Up => Left,
+            Left => Down,
+            Down => Right,
+            Right => Up,
         }
     }
 
@@ -52,15 +75,6 @@ impl Direction {
             Left => vec![Up, Down, Left],
             Up => vec![Left, Right, Down],
             Down => vec![Left, Right, Up],
-        }
-    }
-
-    pub fn turn_right(&mut self) {
-        *self = match self {
-            Right => Down,
-            Down => Left,
-            Left => Up,
-            Up => Right,
         }
     }
 
@@ -103,8 +117,8 @@ impl<N: Num + Clone + Copy> Sub<Direction> for GenericPoint<N> {
     }
 }
 
-impl<N: Num + Clone + Copy + AddAssign + SubAssign> AddAssign<&Direction> for GenericPoint<N> {
-    fn add_assign(&mut self, rhs: &Direction) {
+impl<N: Num + Clone + Copy + AddAssign + SubAssign> AddAssign<Direction> for GenericPoint<N> {
+    fn add_assign(&mut self, rhs: Direction) {
         match rhs {
             Direction::Up => self.y -= N::one(),
             Direction::Down => self.y += N::one(),
@@ -114,8 +128,8 @@ impl<N: Num + Clone + Copy + AddAssign + SubAssign> AddAssign<&Direction> for Ge
     }
 }
 
-impl<N: Num + Clone + Copy + AddAssign + SubAssign> SubAssign<&Direction> for GenericPoint<N> {
-    fn sub_assign(&mut self, rhs: &Direction) {
+impl<N: Num + Clone + Copy + AddAssign + SubAssign> SubAssign<Direction> for GenericPoint<N> {
+    fn sub_assign(&mut self, rhs: Direction) {
         match rhs {
             Direction::Up => self.y += N::one(),
             Direction::Down => self.y -= N::one(),
