@@ -1,13 +1,13 @@
 advent_of_code::solution!(5);
-use std::cmp::Ordering;
 
 use smallvec::SmallVec;
+use std::{cmp::Ordering, iter};
 
 fn parse(
     input: &str,
 ) -> (
     [u128; 90],
-    impl Iterator<Item = SmallVec<[usize; 24]>> + use<'_>,
+    impl Iterator<Item = SmallVec<[u8; 24]>> + use<'_>,
 ) {
     let (ordering, updates) = input.split_once("\n\n").unwrap();
     let mut arr = [0; 90];
@@ -20,19 +20,33 @@ fn parse(
         arr[y as usize] |= 1 << x;
     }
 
-    (
-        arr,
-        updates
-            .lines()
-            .map(|l| l.split(",").map(|n| n.parse().unwrap()).collect()),
-    )
+    let mut i = 0;
+    let updates = updates.as_bytes();
+    // expects the input to end with a newline, which `cargo download 05` does automatically
+    let updates_iter = iter::from_fn(move || {
+        let mut v = SmallVec::new();
+        if i == updates.len() {
+            return None;
+        }
+        loop {
+            i += 3;
+            v.push((updates[i - 3] - b'0') * 10 + (updates[i - 2] - b'0'));
+            if updates[i - 1] == b'\n' {
+                break;
+            }
+        }
+
+        Some(v)
+    });
+
+    (arr, updates_iter)
 }
 
-fn is_safe(v: &[usize], prereqs: &[u128]) -> bool {
+fn is_safe(v: &[u8], prereqs: &[u128]) -> bool {
     for i in 1..v.len() {
         for j in 0..i {
             // check if j has a prereq on i
-            if (prereqs[v[j] - 10] & (0b1 << v[i])) != 0 {
+            if (prereqs[(v[j] - 10) as usize] & (0b1 << v[i])) != 0 {
                 // we only want unsorted ones
                 return false;
             }
@@ -47,7 +61,7 @@ pub fn part_one(input: &str) -> Option<usize> {
 
     Some(
         updates
-            .filter_map(|v| is_safe(&v, &prereqs).then_some(v[v.len() / 2]))
+            .filter_map(|v| is_safe(&v, &prereqs).then_some(v[v.len() / 2] as usize))
             .sum(),
     )
 }
@@ -60,10 +74,10 @@ pub fn part_two(input: &str) -> Option<usize> {
             .filter(|v| !is_safe(v, &prereqs))
             .map(|mut v| {
                 v.sort_unstable_by(|a, b| {
-                    if (prereqs[a - 10] & (0b1 << b)) != 0 {
+                    if (prereqs[(a - 10) as usize] & (0b1 << b)) != 0 {
                         // a has prereq on b, so a > b
                         Ordering::Greater
-                    } else if (prereqs[b - 10] & (0b1 << a)) != 0 {
+                    } else if (prereqs[(b - 10) as usize] & (0b1 << a)) != 0 {
                         // b has prereq on a, so a < b
                         Ordering::Less
                     } else {
@@ -72,7 +86,7 @@ pub fn part_two(input: &str) -> Option<usize> {
                     }
                 });
 
-                v[v.len() / 2]
+                v[v.len() / 2] as usize
             })
             .sum(),
     )
