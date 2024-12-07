@@ -28,8 +28,8 @@ my solutions for [Advent of Code](https://adventofcode.com/) 2024 in [Rust](http
 | [Day 4](./src/bin/04.rs) | `115.8µs` | `94.7µs` |
 | [Day 5](./src/bin/05.rs) | `298.0µs` | `1.0ms` |
 | [Day 6](./src/bin/06.rs) | `35.1µs` | `16.7ms` |
-| [Day 7](./src/bin/07.rs) | `794.3µs` | `253.4ms` |
+| [Day 7](./src/bin/07.rs) | `127.2µs` | `178.1µs` |
 
-**Total: 273.16ms**
+**Total: 19.27ms**
 <!--- benchmarking table --->
 
