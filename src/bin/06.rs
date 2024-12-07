@@ -37,8 +37,6 @@ impl Tile {
     }
 }
 
-type TileGrid = Grid<Tile, 130>;
-
 #[derive(Debug, PartialEq, Eq)]
 enum PathResult {
     Cycle,
@@ -48,11 +46,11 @@ use itertools::Itertools;
 use PathResult::*;
 
 /// returns None if the grid cycles, and returns Some(visited) if the path goes off the grid
-fn follow_path(
-    grid: &mut TileGrid,
+fn follow_path<const N: usize>(
+    grid: &mut Grid<Tile, N>,
     start: Point,
     mut direction: Direction,
-    mut for_each: impl FnMut((&TileGrid, &SignedPoint, &Direction)),
+    mut for_each: impl FnMut((&Grid<Tile, N>, &SignedPoint, &Direction)),
 ) -> PathResult {
     let mut point = start.as_signed_point();
     loop {
@@ -76,7 +74,7 @@ fn follow_path(
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
-    let (mut grid, start) = parse(input);
+    let (mut grid, start) = parse::<130>(input);
 
     let res = follow_path(&mut grid, start, Direction::Up, |_| {});
     assert_eq!(res, OffTheGrid);
@@ -91,7 +89,7 @@ pub fn part_one(input: &str) -> Option<usize> {
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    let (mut grid, start) = parse(input);
+    let (mut grid, start) = parse::<0>(input);
     let mut cycled = 0;
 
     let mut empty = grid.clone();
@@ -122,8 +120,8 @@ pub fn part_two(input: &str) -> Option<usize> {
     Some(cycled)
 }
 
-fn parse(input: &str) -> (TileGrid, Point) {
-    let grid: TileGrid = Grid::from_chars(input);
+fn parse<const N: usize>(input: &str) -> (Grid<Tile, N>, Point) {
+    let grid: Grid<Tile, N> = Grid::from_chars(input);
 
     let start = grid
         .flat_iter()
