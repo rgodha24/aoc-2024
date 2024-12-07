@@ -26,5 +26,5 @@ data/puzzles/*
 dhat-heap.json
 
 # Benchmarks
-
 data/timings.json
+profile.json

@@ -1,106 +1,95 @@
 advent_of_code::solution!(5);
-use std::collections::{HashMap, HashSet};
 
-use itertools::Itertools;
+use smallvec::SmallVec;
+use std::{cmp::Ordering, iter};
+
+fn parse(
+    input: &str,
+) -> (
+    [u128; 90],
+    impl Iterator<Item = SmallVec<[u8; 24]>> + use<'_>,
+) {
+    let (ordering, updates) = input.split_once("\n\n").unwrap();
+    let mut arr = [0; 90];
+    let ordering = ordering.as_bytes();
+    // each step will have `dd|ddn` where d is a digit, and n is a \n, which is 6 bytes long
+    for i in (0..ordering.len()).step_by(6) {
+        let x = (ordering[i] - b'0') * 10 + ordering[i + 1] - b'0';
+        // the extra -1 is to change `arr[y-10]` to `arr[y]`
+        let y = (ordering[i + 3] - b'0' - 1) * 10 + ordering[i + 4] - b'0';
+        arr[y as usize] |= 1 << x;
+    }
+
+    let mut i = 0;
+    let updates = updates.as_bytes();
+    // expects the input to end with a newline, which `cargo download 05` does automatically
+    let updates_iter = iter::from_fn(move || {
+        let mut v = SmallVec::new();
+        if i == updates.len() {
+            return None;
+        }
+        loop {
+            i += 3;
+            v.push((updates[i - 3] - b'0') * 10 + (updates[i - 2] - b'0'));
+            if updates[i - 1] == b'\n' {
+                break;
+            }
+        }
+
+        Some(v)
+    });
+
+    (arr, updates_iter)
+}
+
+fn is_safe(v: &[u8], prereqs: &[u128]) -> bool {
+    for i in 1..v.len() {
+        for j in 0..i {
+            // check if j has a prereq on i
+            if (prereqs[(v[j] - 10) as usize] & (0b1 << v[i])) != 0 {
+                // we only want unsorted ones
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
 
 pub fn part_one(input: &str) -> Option<usize> {
-    let (ordering, updates) = input.split_once("\n\n").unwrap();
-    let mut map: HashMap<usize, HashSet<usize>> = Default::default();
-    for o in ordering.lines() {
-        // y depends on x
-        let (x, y) = o
-            .split_once("|")
-            .map(|(x, y)| (x.parse().unwrap(), y.parse().unwrap()))
-            .unwrap();
+    let (prereqs, updates) = parse(input);
 
-        map.entry(y).or_default().insert(x);
-    }
-
-    let mut sum = 0;
-    'upper: for u in updates.lines() {
-        let mut visited = HashSet::new();
-        let nums = u.split(",").map(|n| n.parse().unwrap()).collect_vec();
-        visited.insert(nums[0]);
-        for n in nums.iter().skip(1) {
-            dbg!(n);
-            let Some(prereqs) = map.get(n) else {
-                continue 'upper;
-            };
-            if !visited.iter().all(|v| prereqs.contains(v)) {
-                continue 'upper;
-            }
-            visited.insert(*n);
-        }
-        sum += nums[nums.len() / 2];
-    }
-
-    Some(sum)
+    Some(
+        updates
+            .filter_map(|v| is_safe(&v, &prereqs).then_some(v[v.len() / 2] as usize))
+            .sum(),
+    )
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    let (ordering, updates) = input.split_once("\n\n").unwrap();
-    let mut map: HashMap<usize, HashSet<usize>> = Default::default();
-    for o in ordering.lines() {
-        // y depends on x
-        let (x, y) = o
-            .split_once("|")
-            .map(|(x, y)| (x.parse().unwrap(), y.parse().unwrap()))
-            .unwrap();
+    let (prereqs, updates) = parse(input);
 
-        map.entry(y).or_default().insert(x);
-    }
+    Some(
+        updates
+            .filter(|v| !is_safe(v, &prereqs))
+            .map(|mut v| {
+                v.sort_unstable_by(|a, b| {
+                    if (prereqs[(a - 10) as usize] & (0b1 << b)) != 0 {
+                        // a has prereq on b, so a > b
+                        Ordering::Greater
+                    } else if (prereqs[(b - 10) as usize] & (0b1 << a)) != 0 {
+                        // b has prereq on a, so a < b
+                        Ordering::Less
+                    } else {
+                        // no prereqs so theyre equal
+                        Ordering::Equal
+                    }
+                });
 
-    let mut incorrect = Vec::new();
-    'upper: for u in updates.lines() {
-        let mut visited = HashSet::new();
-        let nums = u.split(",").map(|n| n.parse().unwrap()).collect_vec();
-        visited.insert(nums[0]);
-        for n in nums.iter().skip(1) {
-            let Some(prereqs) = map.get(n) else {
-                incorrect.push(nums);
-                continue 'upper;
-            };
-            if !visited.iter().all(|v| prereqs.contains(v)) {
-                incorrect.push(nums);
-                continue 'upper;
-            }
-            visited.insert(*n);
-        }
-    }
-
-    let mut sum = 0;
-    for nums in incorrect {
-        let nums_set: HashSet<_> = nums.iter().cloned().collect();
-        dbg!(&nums, &nums_set);
-
-        let mut prereqs = nums
-            .iter()
-            .map(|n| {
-                let Some(prereqs) = map.get(n) else {
-                    return (n, HashSet::new());
-                };
-                (n, prereqs.iter().filter(|n| nums_set.contains(n)).collect())
+                v[v.len() / 2] as usize
             })
-            .collect_vec();
-
-        let mut new_nums = HashSet::new();
-        for i in 0..nums.len() {
-            let (p, (n, _)) = prereqs
-                .iter()
-                .enumerate()
-                .find(|(_, (_, hs))| hs.is_subset(&new_nums))
-                .unwrap();
-
-            new_nums.insert(n);
-            if i == nums.len() / 2 {
-                sum += *n;
-                break;
-            }
-            prereqs.remove(p);
-        }
-    }
-
-    Some(sum)
+            .sum(),
+    )
 }
 
 #[cfg(test)]
