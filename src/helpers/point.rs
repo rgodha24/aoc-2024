@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Mul, Neg, Sub},
 };
 
-use num::{BigInt, Num, NumCast, Signed};
+use num::{integer::gcd, BigInt, Integer, Num, NumCast, Signed};
 /// a point in a 2d space
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GenericPoint<N: Num + Clone + Copy> {
