@@ -99,6 +99,14 @@ impl<N: Num + Clone + Copy> GenericPoint<N> {
     pub fn cross(self, other: &Self) -> N {
         (self.x * other.y) - (self.y * other.x)
     }
+
+    /// min is inclusive, max is exclusive (just like how grid.contains_point works)
+    pub fn is_contained_by(&self, min: &Self, max: &Self) -> bool
+    where
+        N: Ord,
+    {
+        self.x >= min.x && self.y >= min.y && self.x < max.x && self.y < max.y
+    }
 }
 
 impl<N: Num + Clone + Copy + Neg<Output = N>> Neg for GenericPoint<N> {
