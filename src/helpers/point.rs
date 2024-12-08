@@ -3,7 +3,7 @@ use std::{
     ops::{Add, Mul, Neg, Sub},
 };
 
-use num::{integer::gcd, BigInt, Integer, Num, NumCast, Signed};
+use num::{BigInt, Num, NumCast, Signed};
 /// a point in a 2d space
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GenericPoint<N: Num + Clone + Copy> {
@@ -91,6 +91,13 @@ impl<N: Num + Clone + Copy> GenericPoint<N> {
         let y: T = num::cast(self.y).unwrap();
 
         GenericPoint::new(x, y)
+    }
+
+    /// the cross product of two 2d vectors is always in the third dimension,
+    /// but this still achieves the goal of having p.cross(other) == 0 only when
+    /// the 2 points are parallel
+    pub fn cross(self, other: &Self) -> N {
+        (self.x * other.y) - (self.y * other.x)
     }
 }
 
