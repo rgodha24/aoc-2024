@@ -60,14 +60,11 @@ pub fn part_one(input: &str) -> Option<usize> {
         .flat_map(|(_, v)| v.into_iter().tuple_combinations())
     {
         let delta = a2 - a1;
-        let p1 = a1 - delta;
-        let p2 = a2 + delta;
-
-        if p1.is_contained_by(&min, &max) {
-            antinodes.insert(p1);
-        }
-        if p2.is_contained_by(&min, &max) {
-            antinodes.insert(p2);
+        for k in [2, -1] {
+            let p = a1 + delta * k;
+            if p.is_contained_by(&min, &max) {
+                antinodes.insert(p);
+            }
         }
     }
 
@@ -75,17 +72,10 @@ pub fn part_one(input: &str) -> Option<usize> {
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    let grid: Grid<Tile> = Grid::from_chars(input);
     let mut antinodes = HashSet::new();
-    let mut antennas: HashMap<char, Vec<_>> = HashMap::new();
 
-    grid.flat_iter().for_each(|(tile, point)| match tile {
-        Tile::Antenna(c) => antennas
-            .entry(*c)
-            .or_default()
-            .push(point.as_signed_point()),
-        _ => {}
-    });
+    let (antennas, max) = parse(input);
+    let min = SignedPoint::new(0, 0);
 
     for (a1, a2) in antennas
         .into_iter()
@@ -93,12 +83,12 @@ pub fn part_two(input: &str) -> Option<usize> {
     {
         let delta = a2 - a1;
         for sign in [-1, 1] {
-            for k in 0..100 {
-                if grid.contains_point(a2 + delta * sign * k) {
-                    antinodes.insert(a2 + delta * sign * k);
-                }
-                if grid.contains_point(a1 - delta * sign * k) {
-                    antinodes.insert(a1 - delta * sign * k);
+            for k in 0.. {
+                let p = a1 + delta * k * sign;
+                if p.is_contained_by(&min, &max) {
+                    antinodes.insert(p);
+                } else {
+                    break;
                 }
             }
         }
