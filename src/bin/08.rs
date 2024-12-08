@@ -10,7 +10,6 @@ use itertools::Itertools;
 #[derive(Debug, PartialEq, Eq)]
 enum Tile {
     Empty,
-    Antinode,
     Antenna(char),
 }
 
@@ -27,32 +26,44 @@ impl Display for Tile {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Tile::Empty => write!(f, "."),
-            Tile::Antinode => write!(f, "#"),
             Tile::Antenna(c) => write!(f, "{}", c),
         }
     }
 }
 
+fn parse(input: &str) -> (HashMap<char, Vec<SignedPoint>>, SignedPoint) {
+    let mut map: HashMap<_, Vec<_>> = HashMap::new();
+    let mut max = SignedPoint::new(0, 0);
+    for (y, line) in input.lines().enumerate() {
+        if y == 0 {
+            max.x = line.len() as i64;
+        }
+        for (x, c) in line.chars().enumerate() {
+            if c != '.' && c != '#' {
+                map.entry(c).or_default().push(Point::new(x, y).cast());
+            }
+        }
+        max.y += 1;
+    }
+
+    (map, max)
+}
+
 pub fn part_one(input: &str) -> Option<usize> {
-    let mut grid: Grid<Tile> = Grid::from_chars(input);
     let mut antinodes = HashSet::new();
-    let mut antennas: HashMap<char, Vec<Point>> = HashMap::new();
 
-    grid.flat_iter().for_each(|(tile, point)| match tile {
-        Tile::Antenna(c) => antennas.entry(*c).or_default().push(point),
-        _ => {}
-    });
+    let (antennas, max) = parse(input);
+    let min = SignedPoint::new(0, 0);
 
-    for point in grid.points() {
-        for values in antennas.values() {
-            for (a1, a2) in values.iter().tuple_combinations() {
-                let delta1 = point - a1.as_signed_point();
-                let delta2 = point - a2.as_signed_point();
-
-                if delta1 * 2 == delta2 || delta2 * 2 == delta1 {
-                    antinodes.insert(point);
-                    grid[point.cast()] = Tile::Antinode;
-                }
+    for (a1, a2) in antennas
+        .into_iter()
+        .flat_map(|(_, v)| v.into_iter().tuple_combinations())
+    {
+        let delta = a2 - a1;
+        for k in [2, -1] {
+            let p = a1 + delta * k;
+            if p.is_contained_by(&min, &max) {
+                antinodes.insert(p);
             }
         }
     }
@@ -61,28 +72,23 @@ pub fn part_one(input: &str) -> Option<usize> {
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    let mut grid: Grid<Tile> = Grid::from_chars(input);
     let mut antinodes = HashSet::new();
-    let mut antennas: HashMap<char, Vec<Point>> = HashMap::new();
 
-    grid.flat_iter().for_each(|(tile, point)| match tile {
-        Tile::Antenna(c) => antennas.entry(*c).or_default().push(point),
-        _ => {}
-    });
+    let (antennas, max) = parse(input);
+    let min = SignedPoint::new(0, 0);
 
-    for point in grid.points() {
-        for values in antennas.values() {
-            for (a1, a2) in values.iter().tuple_combinations() {
-                let delta1 = point - a1.as_signed_point();
-                let delta2 = point - a2.as_signed_point();
-                for i in 2..100 {
-                    for j in 0..100 {
-                        if delta1 * i == delta2 * j || delta2 * i == delta1 * j {
-                            antinodes.insert(point);
-                            grid[point.cast()] = Tile::Antinode;
-                            break;
-                        }
-                    }
+    for (a1, a2) in antennas
+        .into_iter()
+        .flat_map(|(_, v)| v.into_iter().tuple_combinations())
+    {
+        let delta = a2 - a1;
+        for sign in [-1, 1] {
+            for k in 0.. {
+                let p = a1 + delta * k * sign;
+                if p.is_contained_by(&min, &max) {
+                    antinodes.insert(p);
+                } else {
+                    break;
                 }
             }
         }
