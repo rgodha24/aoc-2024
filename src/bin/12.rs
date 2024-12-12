@@ -35,10 +35,6 @@ pub fn part_one(input: &str) -> Option<usize> {
             .flat_map(|point| point.neighbors())
             .filter(|p| !area.contains(p))
             .count();
-        println!(
-            "point {p} with char {c} area {:?} and perimeter {}",
-            area, perimeter
-        );
         ans += area.len() * perimeter;
     }
 
@@ -71,98 +67,31 @@ pub fn part_two(input: &str) -> Option<usize> {
             }
         }
 
-        // let top_left = area
-        //     .iter()
-        //     .flat_map(|point| point.neighbors_diag())
-        //     .filter(|p| !area.contains(p))
-        //     .min_by(|a, b| a.x.cmp(&b.x).then(a.y.cmp(&b.y)))
-        //     .unwrap();
-        //
-        // dbg!(top_left);
-        let mut master = HashSet::new();
-        let mut sides = 0;
-        for x in -1..=grid.width() as i64 {
-            for y in -1..=grid.height() as i64 {
-                let point = SignedPoint::new(x, y);
-                if area.contains(&point) {
-                    continue;
-                }
-                if !master.insert(point) {
-                    continue;
-                }
-                let mut floodfill = HashSet::new();
-                floodfill.insert(point);
-                let mut q = vec![point];
-                while let Some(p) = q.pop() {
-                    if floodfill.insert(p) {
-                        continue;
-                    }
-                    for neighbor in p.neighbors() {
-                        if !area.contains(&neighbor) {
-                            q.push(neighbor);
-                        }
-                    }
-                }
-                dbg!(&floodfill);
-                let Some(mut p) = area
-                    .iter()
-                    .flat_map(|p| p.neighbors().into_iter())
-                    .find(|p| floodfill.contains(p))
-                else {
-                    continue;
-                };
-                let mut directions = Vec::new();
-                let mut direction = Direction::all()
-                    .into_iter()
-                    .find(|&d| area.contains(&(p + d.right())))
-                    .unwrap();
-                assert!(area.contains(&(p + direction.right())));
-                let start = (p, direction);
-                loop {
-                    dbg!((p, direction, c));
-                    directions.push(direction);
-                    if area.contains(&(p + direction)) {
-                        direction = direction.left();
-                        p += direction;
-                        sides += 1;
-                    } else {
-                        if area.contains(&(p + direction.right())) {
-                            p += direction;
-                        } else {
-                            direction = direction.right();
-                            p += direction;
-                            sides += 1;
-                        }
-                    }
-                    if p == start.0 {
-                        break;
-                    }
-                }
-                if directions.last() == directions.first() {
-                    sides -= 1;
-                }
-            }
-        }
-        // while sides_visited.insert(currpoint) {
-        // dbg!(&currpoint, c);
-        // if perimeter.contains(&(currpoint + direction)) {
-        //     currpoint += direction;
-        // } else {
-        //     for d in direction.except_self() {
-        //         if perimeter.contains(&(currpoint + d))
-        //             && !sides_visited.contains(&(currpoint + d))
-        //         {
-        //             direction = d;
-        //             sides += 1;
-        //             currpoint += direction;
-        //             break;
-        //         }
-        //     }
-        // }
-        // }
+        let corner_directions = Direction::all().map(|d| (d, d.right()));
 
-        // println!("point {p} with char {c} area {:?} and perimeter {}", area, perimeter );
-        ans += area.len() * sides;
+        let corners: usize = area
+            .iter()
+            .flat_map(|p| p.neighbors_diag().into_iter())
+            .filter(|p| !area.contains(p))
+            .unique()
+            .map(|p| {
+                let mut corners = 0;
+                for &(d1, d2) in corner_directions.iter() {
+                    // this point is a corner in this direction if area contains p+(d1, d2) OR p+(!d1, !d2, d1+d2)
+                    let c1 = area.contains(&(p + d1));
+                    let c2 = area.contains(&(p + d2));
+                    let c3 = area.contains(&(p + d1 + d2));
+                    match (c1, c2, c3) {
+                        (true, true, _) | (false, false, true) => corners += 1,
+                        _ => {}
+                    }
+                }
+                corners
+            })
+            .sum();
+
+        // the number of corners == the number of sides. I might be dumb
+        ans += area.len() * corners;
     }
 
     Some(ans)
@@ -190,5 +119,30 @@ EXXXX
 EEEEE"#;
         let result = part_two(s);
         assert_eq!(result, Some(236));
+
+        let s = r#"RRRRIICCFF
+RRRRIICCCF
+VVRRRCCFFF
+VVRCCCJFFF
+VVVVCJJCFE
+VVIVCCJJEE
+VVIIICJJEE
+MIIIIIJJEE
+MIIISIJEEE
+MMMISSJEEE"#;
+        let result = part_two(s);
+        assert_eq!(result, Some(1206));
+    }
+
+    #[test]
+    fn test_part_two_s3() {
+        let s = r#"AAAAAA
+AAABBA
+AAABBA
+ABBAAA
+ABBAAA
+AAAAAA"#;
+        let result = part_two(s);
+        assert_eq!(result, Some(368));
     }
 }
