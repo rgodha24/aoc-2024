@@ -56,8 +56,8 @@ impl Direction {
         }
     }
 
-    pub fn all() -> Vec<Self> {
-        vec![Right, Left, Up, Down]
+    pub fn all() -> [Self; 4] {
+        [Right, Left, Up, Down]
     }
 
     pub fn except_self_and_opposite(&self) -> Vec<Self> {
