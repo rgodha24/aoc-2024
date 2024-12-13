@@ -1,33 +1,22 @@
 advent_of_code::solution!(13);
 use advent_of_code::helpers::*;
 use itertools::Itertools;
-use mini_matrix::Matrix;
-use num::Rational64;
 
-type P = GenericPoint<Rational64>;
 #[derive(Debug, Clone)]
 struct Game {
-    a: P,
-    b: P,
-    goal: P,
+    a: SignedPoint,
+    b: SignedPoint,
+    goal: SignedPoint,
 }
 
 impl Game {
     fn tokens_to_solve(self) -> Option<i64> {
-        let mat = Matrix::from([
-            [self.a.x, self.b.x, self.goal.x],
-            [self.a.y, self.b.y, self.goal.y],
-        ]);
-
-        let rref = mat.row_echelon();
-        if rref[(0, 0)] == 1.into() && rref[(1, 1)] == 1.into() {
-            let apress = rref[(0, 2)];
-            let bpress = rref[(1, 2)];
-            (apress.is_integer() && bpress.is_integer())
-                .then_some(apress.numer() * 3 + bpress.numer())
-        } else {
-            None
-        }
+        // shoutout wolfram alpha
+        let a = (self.b.y * self.goal.x - self.b.x * self.goal.y)
+            / (self.a.x * self.b.y - self.b.x * self.a.y);
+        let b = (self.goal.x * self.a.y - self.a.x * self.goal.y)
+            / (self.b.x * self.a.y - self.a.x * self.b.y);
+        (self.a * a + self.b * b == self.goal).then_some(a * 3 + b)
     }
 }
 pub fn part_one(input: &str) -> Option<i64> {
@@ -42,9 +31,9 @@ pub fn part_one(input: &str) -> Option<i64> {
         let (prizex, prizey) = (prizex[2..].parse().unwrap(), prizey[2..].parse().unwrap());
 
         games.push(Game {
-            a: P::new(ax, ay),
-            b: P::new(bx, by),
-            goal: P::new(prizex, prizey),
+            a: SignedPoint::new(ax, ay),
+            b: SignedPoint::new(bx, by),
+            goal: SignedPoint::new(prizex, prizey),
         });
     }
 
@@ -58,7 +47,7 @@ pub fn part_one(input: &str) -> Option<i64> {
 
 pub fn part_two(input: &str) -> Option<i64> {
     let mut games = Vec::new();
-    let extra = P::new(10000000000000.into(), 10000000000000.into());
+    let extra = SignedPoint::new(10000000000000, 10000000000000);
     for game in input.split("\n\n") {
         let (a, b, goal) = game.lines().collect_tuple().unwrap();
         let (ax, ay) = a[9..].split_once(", ").unwrap();
@@ -69,9 +58,9 @@ pub fn part_two(input: &str) -> Option<i64> {
         let (prizex, prizey) = (prizex[2..].parse().unwrap(), prizey[2..].parse().unwrap());
 
         games.push(Game {
-            a: P::new(ax, ay),
-            b: P::new(bx, by),
-            goal: P::new(prizex, prizey) + extra,
+            a: SignedPoint::new(ax, ay),
+            b: SignedPoint::new(bx, by),
+            goal: SignedPoint::new(prizex, prizey) + extra,
         });
     }
 
