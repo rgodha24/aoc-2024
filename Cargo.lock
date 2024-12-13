@@ -24,6 +24,7 @@ dependencies = [
  "chrono",
  "dhat",
  "itertools",
+ "mini-matrix",
  "num",
  "pest",
  "pest_derive",
@@ -271,6 +272,15 @@ name = "memchr"
 version = "2.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f665ee40bc4a3c5590afb1e9677db74a508659dfd71e126420da8274909a0167"
+
+[[package]]
+name = "mini-matrix"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51dbf372a4f950e0eee5739e0dda1222c0abd586ba8305def0bbdf42d55b798a"
+dependencies = [
+ "num",
+]
 
 [[package]]
 name = "miniz_oxide"

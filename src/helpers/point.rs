@@ -141,7 +141,7 @@ impl<N: Num + Clone + Copy> Sub for GenericPoint<N> {
 
 impl<N> Mul<N> for GenericPoint<N>
 where
-    N: Num + Clone + Copy + Neg<Output = N>,
+    N: Num + Clone + Copy,
 {
     type Output = GenericPoint<N>;
 
