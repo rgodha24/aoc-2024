@@ -1,6 +1,6 @@
 use std::{
     fmt::Display,
-    ops::{Add, Mul, Neg, Sub},
+    ops::{Add, Div, Mul, Neg, Sub},
 };
 
 use num::{BigInt, Num, NumCast, Signed};
@@ -147,6 +147,16 @@ where
 
     fn mul(self, rhs: N) -> Self::Output {
         GenericPoint::new(self.x * rhs, self.y * rhs)
+    }
+}
+impl<N> Div<N> for GenericPoint<N>
+where
+    N: Num + Clone + Copy,
+{
+    type Output = GenericPoint<N>;
+
+    fn div(self, rhs: N) -> Self::Output {
+        GenericPoint::new(self.x / rhs, self.y / rhs)
     }
 }
 
