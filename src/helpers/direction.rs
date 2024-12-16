@@ -1,4 +1,7 @@
-use std::ops::{Add, AddAssign, Neg, Sub, SubAssign};
+use std::{
+    fmt::Display,
+    ops::{Add, AddAssign, Neg, Sub, SubAssign},
+};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(u8)]
@@ -146,7 +149,7 @@ impl From<char> for Direction {
             'L' | 'l' | '<' => Left,
             'U' | 'u' | '^' => Up,
             'D' | 'd' | 'v' => Down,
-            c => panic!("invalid direction char: {}", c),
+            c => panic!("invalid direction char: {:?}", c),
         }
     }
 }
@@ -158,6 +161,17 @@ impl From<Direction> for char {
             Left => '<',
             Up => '^',
             Down => 'v',
+        }
+    }
+}
+
+impl Display for Direction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Up => write!(f, "{}", '^'),
+            Right => write!(f, "{}", '>'),
+            Down => write!(f, "{}", 'v'),
+            Left => write!(f, "{}", '<'),
         }
     }
 }

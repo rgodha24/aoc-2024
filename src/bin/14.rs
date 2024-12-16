@@ -23,9 +23,8 @@ fn solve(input: &str, dimensions: SignedPoint) -> usize {
         }
     }
 
-    let qboundary = (dimensions / 2);
-    (bots
-        .into_iter()
+    let qboundary = dimensions / 2;
+    bots.into_iter()
         .map(|(pos, _)| {
             SignedPoint::new(
                 pos.x.rem_euclid(dimensions.x),
@@ -40,8 +39,8 @@ fn solve(input: &str, dimensions: SignedPoint) -> usize {
             (Greater, Greater) => Some(4),
         })
         .counts()
-        .values())
-    .product()
+        .values()
+        .product()
 }
 
 pub fn part_one(input: &str) -> Option<usize> {

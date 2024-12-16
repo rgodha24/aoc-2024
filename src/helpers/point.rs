@@ -1,6 +1,7 @@
 use std::{
     fmt::Display,
     ops::{Add, Div, Mul, Neg, Sub},
+    str::FromStr,
 };
 
 use num::{BigInt, Num, NumCast, Signed};
@@ -21,6 +22,16 @@ pub type BIPoint = GenericPoint<BigInt>;
 impl<N: Num + Clone + Copy> GenericPoint<N> {
     pub fn new(x: N, y: N) -> Self {
         Self { x, y }
+    }
+
+    pub fn from_delimited(str: &str, delimiter: &str) -> Option<Self>
+    where
+        N: FromStr,
+    {
+        let (x, y) = str.split_once(delimiter)?;
+        let x = x.parse().ok()?;
+        let y = y.parse().ok()?;
+        Some(Self::new(x, y))
     }
 
     pub fn neighbors(&self) -> [Self; 4] {
@@ -166,5 +177,14 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{},{}", self.x, self.y)
+    }
+}
+
+impl<N> From<(N, N)> for GenericPoint<N>
+where
+    N: Num + Clone + Copy,
+{
+    fn from((x, y): (N, N)) -> Self {
+        GenericPoint::new(x, y)
     }
 }

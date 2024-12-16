@@ -256,6 +256,16 @@ impl<T, const W: usize> Grid<T, W> {
             v.fill(with)
         }
     }
+
+    pub fn swap(&mut self, p1: Point, p2: Point)
+    where
+        T: Clone,
+    {
+        // TODO: get this to work with std::mem::swap somehow
+        let (d1, d2) = (self[p1].clone(), self[p2].clone());
+        self[p2] = d1;
+        self[p1] = d2;
+    }
 }
 
 impl<T: Debug> Debug for Grid<T> {
