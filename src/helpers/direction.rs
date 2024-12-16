@@ -3,7 +3,7 @@ use std::{
     ops::{Add, AddAssign, Neg, Sub, SubAssign},
 };
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 #[repr(u8)]
 pub enum Direction {
     /// 1
