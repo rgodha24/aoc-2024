@@ -1,168 +1,150 @@
 advent_of_code::solution!(16);
 use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashMap, HashSet},
+    collections::{BinaryHeap, HashSet},
     fmt::Display,
 };
 
 use advent_of_code::helpers::*;
-use itertools::Itertools;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum Tile {
-    Start,
-    End,
-    Wall,
-    Empty,
-}
+tiles!('S' => Start, 'E' => End, '.' => Empty, '#' => Wall);
 
-impl From<char> for Tile {
-    fn from(value: char) -> Self {
-        match value {
-            '.' => Tile::Empty,
-            '#' => Tile::Wall,
-            'S' => Tile::Start,
-            'E' => Tile::End,
-            c => panic!("char {c} unknown"),
+fn djikstras(grid: Grid<Tile>) -> Grid<DirectionMap<usize>> {
+    let start = grid.find(Tile::Start).unwrap();
+
+    let mut fastest = grid.map(|_, _| DirectionMap::new_cloned(usize::MAX));
+    let mut heap = BinaryHeap::new();
+    heap.push(State {
+        cost: 0,
+        point: start,
+        direction: Direction::Right,
+    });
+
+    while let Some(State {
+        cost,
+        point,
+        direction,
+    }) = heap.pop()
+    {
+        let min_cost = &mut fastest[point][direction];
+        if *min_cost <= cost {
+            continue;
         }
-    }
-}
-impl Display for Tile {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Tile::Start => write!(f, "{}", 'S'),
-            Tile::End => write!(f, "{}", 'E'),
-            Tile::Wall => write!(f, "{}", '#'),
-            Tile::Empty => write!(f, "{}", '.'),
+        *min_cost = cost;
+
+        if grid
+            .get(point + direction)
+            .is_some_and(|tile| *tile != Tile::Wall)
+        {
+            heap.push(State {
+                cost: cost + 1,
+                point: point + direction,
+                direction,
+            });
         }
+
+        heap.push(State {
+            cost: cost + 1000,
+            point,
+            direction: direction.right(),
+        });
+        heap.push(State {
+            cost: cost + 1000,
+            point,
+            direction: direction.left(),
+        });
     }
+
+    fastest
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
-    let mut grid: Grid<Tile> = Grid::from_chars(input);
-    let start = grid
-        .flat_iter()
-        .find_map(|(tile, point)| matches!(tile, Tile::Start).then_some(point))
-        .unwrap();
-    let end = grid
-        .flat_iter()
-        .find_map(|(tile, point)| matches!(tile, Tile::End).then_some(point))
-        .unwrap();
+    let grid: Grid<Tile> = Grid::from_chars(input);
+    let end = grid.find(Tile::End).unwrap();
+    let fastest = djikstras(grid);
 
-    let mut heap = BinaryHeap::new();
-    heap.push(Reverse((0, start, Direction::Right)));
-    let mut fastest: HashMap<_, _> = grid
-        .points()
-        .flat_map(|point| Direction::all().map(|d| (point, d)))
-        .map(|k| (k, usize::MAX))
-        .collect();
-
-    while let Some(Reverse((cost, point, direction))) = heap.pop() {
-        if fastest[&(point, direction)] <= cost {
-            continue;
-        }
-        fastest.insert((point, direction), cost);
-
-        // println!("{}", point);
-        if grid
-            .get(point + direction)
-            .is_some_and(|tile| !matches!(tile, Tile::Wall))
-        {
-            heap.push(Reverse((cost + 1, point + direction, direction)));
-        }
-
-        heap.push(Reverse((cost + 1000, point, direction.right())));
-        heap.push(Reverse((cost + 1000, point, direction.left())));
-    }
-
-    {
-        let mut new_grid = grid.clone();
-        for (&(p, dir), &speed) in fastest.iter() {
-            if speed != usize::MAX {
-                new_grid[p] = Tile::Start;
-            }
-        }
-        // println!("{new_grid}",);
-    }
-
-    Direction::all()
-        .into_iter()
-        .map(|direction| fastest[&(end, direction)])
-        .min()
+    fastest[end].into_iter().min()
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
     let grid: Grid<Tile> = Grid::from_chars(input);
-    let start = grid
-        .flat_iter()
-        .find_map(|(tile, point)| matches!(tile, Tile::Start).then_some(point))
-        .unwrap();
-    let end = grid
-        .flat_iter()
-        .find_map(|(tile, point)| matches!(tile, Tile::End).then_some(point))
-        .unwrap();
-
-    let mut heap = BinaryHeap::new();
-    heap.push(Reverse((0, start, Direction::Right, vec![start])));
-    let mut fastest: HashMap<_, _> = grid
-        .points()
-        .flat_map(|point| Direction::all().map(|d| (point, d)))
-        .map(|k| (k, usize::MAX))
-        .collect();
-
-    let mut end_paths: HashMap<_, HashSet<_>> = HashMap::new();
-
-    while let Some(Reverse((cost, point, direction, mut path))) = heap.pop() {
-        if fastest[&(point, direction)] < cost {
-            continue;
-        }
-        fastest.insert((point, direction), cost);
-        path.push(point);
-
-        if point == end {
-            let hs = end_paths.entry(cost).or_default();
-            hs.extend(path.clone().drain(..));
-        }
-
-        // println!("{}", point);
-        if grid
-            .get(point + direction)
-            .is_some_and(|tile| !matches!(tile, Tile::Wall))
-        {
-            heap.push(Reverse((
-                cost + 1,
-                point + direction,
-                direction,
-                path.clone(),
-            )));
-        }
-
-        heap.push(Reverse((
-            cost + 1000,
+    let end = grid.find(Tile::End).unwrap();
+    let fastest = djikstras(grid);
+    let mut visited = HashSet::new();
+    fn backtrack(
+        fastest: &Grid<DirectionMap<usize>>,
+        visited: &mut HashSet<Point>,
+        State {
+            cost,
             point,
-            direction.right(),
-            path.clone(),
-        )));
-        heap.push(Reverse((cost + 1000, point, direction.left(), path)));
-    }
-
-    {
-        let mut new_grid = grid.clone();
-        for (&(p, dir), &speed) in fastest.iter() {
-            if speed != usize::MAX {
-                new_grid[p] = Tile::Start;
-            }
+            direction,
+        }: State,
+    ) {
+        if fastest[point][direction] != cost || cost == 0 {
+            return;
         }
-        // println!("{new_grid}",);
+        visited.insert(point);
+        backtrack(
+            fastest,
+            visited,
+            State {
+                direction,
+                point: point - direction,
+                cost: cost - 1,
+            },
+        );
+        backtrack(
+            fastest,
+            visited,
+            State {
+                direction: direction.right(),
+                point,
+                cost: cost - 1000,
+            },
+        );
+        backtrack(
+            fastest,
+            visited,
+            State {
+                direction: direction.left(),
+                point,
+                cost: cost - 1000,
+            },
+        );
     }
 
-    let min_cost = Direction::all()
-        .into_iter()
-        .map(|direction| fastest[&(end, direction)])
-        .min()
-        .unwrap();
+    let lowest_cost = *fastest[end].iter().min().unwrap();
+    for direction in Direction::all() {
+        backtrack(
+            &fastest,
+            &mut visited,
+            State {
+                cost: lowest_cost,
+                point: end,
+                direction,
+            },
+        );
+    }
 
-    Some(end_paths[&min_cost].len())
+    Some(visited.len())
+}
+
+#[derive(Clone, PartialEq, Eq)]
+struct State {
+    cost: usize,
+    point: Point,
+    direction: Direction,
+}
+
+impl Ord for State {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.cost.cmp(&other.cost).reverse()
+    }
+}
+
+impl PartialOrd for State {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 #[cfg(test)]

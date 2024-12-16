@@ -6,7 +6,7 @@ use std::{
 
 use num::{BigInt, Num, NumCast, Signed};
 /// a point in a 2d space
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GenericPoint<N: Num + Clone + Copy> {
     pub x: N,
     pub y: N,

@@ -266,6 +266,14 @@ impl<T, const W: usize> Grid<T, W> {
         self[p2] = d1;
         self[p1] = d2;
     }
+
+    pub fn find(&self, value: T) -> Option<Point>
+    where
+        T: Eq,
+    {
+        self.flat_iter()
+            .find_map(|(v, p)| (*v == value).then_some(p))
+    }
 }
 
 impl<T: Debug> Debug for Grid<T> {

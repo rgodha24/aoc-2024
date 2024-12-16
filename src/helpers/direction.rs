@@ -1,9 +1,9 @@
 use std::{
     fmt::Display,
-    ops::{Add, AddAssign, Neg, Sub, SubAssign},
+    ops::{Add, AddAssign, Index, IndexMut, Neg, Sub, SubAssign},
 };
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[repr(u8)]
 pub enum Direction {
     /// 1
@@ -91,6 +91,60 @@ impl Direction {
             Up => GenericPoint::new(N::zero(), -N::one()),
             Down => GenericPoint::new(N::zero(), N::one()),
         }
+    }
+
+    pub fn as_index(&self) -> usize {
+        match self {
+            Up => 0,
+            Right => 1,
+            Down => 2,
+            Left => 3,
+        }
+    }
+
+    pub fn from_index(i: usize) -> Self {
+        match i {
+            0 => Up,
+            1 => Right,
+            2 => Down,
+            3 => Left,
+            i => panic!("invalid index {i}. can not convert to direction"),
+        }
+    }
+}
+
+/// holds an instance of `V` for every single direction
+#[derive(Debug, Clone, PartialEq, Eq, Default, derive_more::Deref)]
+pub struct DirectionMap<V> {
+    inner: [V; 4],
+}
+
+impl<V> DirectionMap<V> {
+    pub fn new(data: [V; 4]) -> Self {
+        Self { inner: data }
+    }
+
+    pub fn new_cloned(v: V) -> Self
+    where
+        V: Clone,
+    {
+        Self {
+            inner: [v.clone(), v.clone(), v.clone(), v.clone()],
+        }
+    }
+}
+
+impl<V> Index<Direction> for DirectionMap<V> {
+    type Output = V;
+
+    fn index(&self, direction: Direction) -> &Self::Output {
+        &self.inner[direction.as_index()]
+    }
+}
+
+impl<V> IndexMut<Direction> for DirectionMap<V> {
+    fn index_mut(&mut self, direction: Direction) -> &mut Self::Output {
+        &mut self.inner[direction.as_index()]
     }
 }
 
