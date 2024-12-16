@@ -1,5 +1,5 @@
 advent_of_code::solution!(15);
-use std::{cmp::Reverse, collections::HashSet, default, fmt::Display};
+use std::{collections::HashSet, fmt::Display};
 
 use advent_of_code::helpers::*;
 use itertools::Itertools;
@@ -155,8 +155,11 @@ pub fn part_two(input: &str) -> Option<usize> {
                                 for i in 0..robot.x.abs_diff(first_empty.x) as i64 {
                                     enlarged_grid[(first_empty.cast() + direction
                                         - (direction.as_point() * i))
-                                        .cast()] =
-                                        if i % 2 == 0 { Tile2::BoxL } else { Tile2::BoxR };
+                                        .cast()] = match (i % 2, direction) {
+                                        (1, Direction::Right) | (0, Direction::Left) => Tile2::BoxL,
+                                        (0, Direction::Right) | (1, Direction::Left) => Tile2::BoxR,
+                                        _ => panic!("how did we get here?"),
+                                    };
                                 }
                                 robot += direction;
                                 enlarged_grid[robot] = Tile2::Empty;
@@ -207,26 +210,14 @@ pub fn part_two(input: &str) -> Option<usize> {
                             }
                             robot += direction;
                         }
-
-                        // if !blocked {
-                        //     for (bl, br) in boxes.iter().cloned() {
-                        //         enlarged_grid[bl + direction] = Tile2::BoxL;
-                        //         enlarged_grid[br + direction] = Tile2::BoxR;
-                        //         enlarged_grid[bl] = Tile2::Empty;
-                        //         enlarged_grid[br] = Tile2::Empty;
-                        //     }
-                        // }
                     }
                 }
             }
         }
 
         enlarged_grid[robot] = Tile2::Robot;
-        println!("Move {direction}:\n{enlarged_grid}");
         enlarged_grid[robot] = prev;
     }
-
-    println!("{}", enlarged_grid);
 
     Some(
         enlarged_grid
@@ -241,6 +232,57 @@ pub fn part_two(input: &str) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rstest::*;
+
+    #[rstest]
+    #[case(
+        r#"#######
+#...#.#
+#.....#
+#..OO@#
+#..O..#
+#.....#
+#######
+
+<vv<<^^<<^^"#,
+        Some(618)
+    )]
+    #[case(
+        r#"##########
+#..O..O.O#
+#......O.#
+#.OO..O.O#
+#..O@..O.#
+#O#..O...#
+#O..O..O.#
+#.OO.O.OO#
+#....O...#
+##########
+
+<vv>^<v^>v>^vv^v>v<>v^v<v<^vv<<<^><<><>>v<vvv<>^v^>^<<<><<v<<<v^vv^v>^
+vvv<<^>^v^^><<>>><>^<<><^vv^^<>vvv<>><^^v>^>vv<>v<<<<v<^v>^<^^>>>^<v<v
+><>vv>v^v^<>><>>>><^^>vv>v<^^^>>v^v^<^^>v^^>v^<^v>v<>>v^v^<v>v^^<^^vv<
+<<v<^>>^^^^>>>v^<>vvv^><v<<<>^^^vv^<vvv>^>v<^^^^v<>^>vvvv><>>v^<<^^^^^
+^><^><>>><>^^<<^^v>>><^<v>^<vv>>v>>>^v><>^v><<<<v>>v<v<v>vvv>^<><<>^><
+^>><>^v<><^vvv<^^<><v<<<<<><^v<<<><<<^^<v<^^^><^>>^<v^><<<^>>^v<v^v<v^
+>^>>^v>vv>^<<^v<>><<><<v<<v><>v<^vv<<<>^^v^>^^>>><<^v>>v^v><^^>>^<>vv^
+<><^^>^^^<><vvvvv^v<v<<>^v<v>v<<^><<><<><<<^^<<<^<<>><<><^^^>^^<>^>v<>
+^^>vv<^v^v<vv>^<><v<^v>^^^>>>^^vvv^>vvv<>>>^<^>>>>>^<<^v>^vvv<>^<><<v>
+v^^>>><<^^<>>^v^<v^vv<>v^<<>^<^v^v><^<<<><<^<v><v<>vv>>v><v^<vv<>v^<<^
+"#,
+        Some(9021)
+    )]
+    #[case(
+        r#"####
+#.O.
+#.@.
+
+<<"#,
+        Some(104)
+    )]
+    fn test_part_two(#[case] s: &str, #[case] ans: Option<usize>) {
+        assert_eq!(part_two(s), ans);
+    }
 
     #[test]
     fn test_part_one() {
@@ -254,33 +296,9 @@ mod tests {
 ########
 
 <^^>>>vv<v>>v<<"#;
-        let result = part_two(s);
+        let result = part_one(s);
         assert_eq!(result, Some(2028));
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
         assert_eq!(result, Some(10092));
-    }
-
-    #[test]
-    fn test_part_two() {
-        let s = r#"#######
-#...#.#
-#.....#
-#..OO@#
-#..O..#
-#.....#
-#######
-
-<vv<<^^<<^^"#;
-        let result = part_two(s);
-        assert_eq!(result, Some(618));
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(9021));
-        let s = r#"####
-#.O.
-#.@.
-
-<<"#;
-        let result = part_two(s);
-        assert_eq!(result, Some(104));
     }
 }
