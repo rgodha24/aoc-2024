@@ -17,7 +17,7 @@ impl Tile {
     fn visit(&mut self, direction: Direction) -> bool {
         let visited = self.0 & (direction as u8) > 0;
         self.0 = (self.0 & Self::DIRECTIONS) | (direction as u8);
-        return visited;
+        visited
     }
 
     fn is_visited(&self) -> bool {
@@ -63,7 +63,7 @@ fn follow_path<const N: usize>(
                 direction = direction.right();
             }
             Some(_) => {
-                for_each((&grid, &point, &direction));
+                for_each((grid, &point, &direction));
                 point += direction;
             }
             None => {
@@ -161,33 +161,33 @@ mod tests {
     #[test]
     fn test_tile_logic() {
         let mut tile = Tile(Tile::START);
-        assert_eq!(tile.is_start(), true);
-        assert_eq!(tile.is_empty(), true);
-        assert_eq!(tile.is_visited(), false);
-        assert_eq!(tile.is_obstacle(), false);
+        assert!(tile.is_start());
+        assert!(tile.is_empty());
+        assert!(!tile.is_visited());
+        assert!(!tile.is_obstacle());
 
         let res = tile.visit(Direction::Right);
-        assert_eq!(res, false);
-        assert_eq!(tile.is_start(), false);
-        assert_eq!(tile.is_empty(), false);
-        assert_eq!(tile.is_visited(), true);
-        assert_eq!(tile.is_obstacle(), false);
+        assert!(!res);
+        assert!(!tile.is_start());
+        assert!(!tile.is_empty());
+        assert!(tile.is_visited());
+        assert!(!tile.is_obstacle());
         assert_eq!(tile.0, Direction::Right as u8);
 
         let res = tile.visit(Direction::Right);
-        assert_eq!(res, true);
-        assert_eq!(tile.is_start(), false);
-        assert_eq!(tile.is_empty(), false);
-        assert_eq!(tile.is_visited(), true);
-        assert_eq!(tile.is_obstacle(), false);
+        assert!(res);
+        assert!(!tile.is_start());
+        assert!(!tile.is_empty());
+        assert!(tile.is_visited());
+        assert!(!tile.is_obstacle());
         assert_eq!(tile.0, Direction::Right as u8);
 
         let res = tile.visit(Direction::Left);
-        assert_eq!(res, false);
-        assert_eq!(tile.is_start(), false);
-        assert_eq!(tile.is_empty(), false);
-        assert_eq!(tile.is_visited(), true);
-        assert_eq!(tile.is_obstacle(), false);
+        assert!(!res);
+        assert!(!tile.is_start());
+        assert!(!tile.is_empty());
+        assert!(tile.is_visited());
+        assert!(!tile.is_obstacle());
         assert_eq!(tile.0, (Direction::Right as u8) + (Direction::Left as u8));
     }
 }

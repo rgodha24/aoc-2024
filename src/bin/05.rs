@@ -53,7 +53,7 @@ fn is_safe(v: &[u8], prereqs: &[u128]) -> bool {
         }
     }
 
-    return true;
+    true
 }
 
 pub fn part_one(input: &str) -> Option<usize> {

@@ -19,6 +19,10 @@ where
     line.split_whitespace().map(|s| s.parse::<N>().unwrap())
 }
 
+pub fn digits(n: u64) -> u32 {
+    n.checked_ilog10().unwrap_or(0) + 1
+}
+
 #[macro_export]
 macro_rules! tiles {
     ($($char:expr => $name:ident),*) => {

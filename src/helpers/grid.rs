@@ -68,11 +68,12 @@ impl<T, const W: usize> Grid<T, W> {
     /// the bottom left corner is (0, 0)
     pub fn from_chars(input: &str) -> Self
     where
-        T: From<char>,
+        T: TryFrom<char>,
+        <T as TryFrom<char>>::Error: Debug,
     {
         let data = input
             .lines()
-            .map(|line| line.chars().map(T::from).collect())
+            .map(|line| line.chars().map(|c| T::try_from(c).unwrap()).collect())
             .collect();
         Self { data }
     }
@@ -267,12 +268,12 @@ impl<T, const W: usize> Grid<T, W> {
         self[p1] = d2;
     }
 
-    pub fn find(&self, value: T) -> Option<Point>
+    pub fn find(&self, value: T) -> impl Iterator<Item = Point> + '_
     where
         T: Eq,
     {
         self.flat_iter()
-            .find_map(|(v, p)| (*v == value).then_some(p))
+            .filter_map(move |(v, p)| (*v == value).then_some(p))
     }
 }
 

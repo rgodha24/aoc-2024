@@ -38,11 +38,13 @@ my solutions for [Advent of Code](https://adventofcode.com/) 2024 in [Rust](http
 | [Day 7](./src/bin/07.rs) | `127.2µs` | `178.1µs` |
 | [Day 8](./src/bin/08.rs) | `22.0µs` | `76.1µs` |
 | [Day 9](./src/bin/09.rs) | `245.6µs` | `255.5ms` |
+| [Day 10](./src/bin/10.rs) | `325.4µs` | `104.5µs` |
+| [Day 11](./src/bin/11.rs) | `93.6µs` | `4.6ms` |
 | [Day 12](./src/bin/12.rs) | `4.1ms` | `11.2ms` |
 | [Day 13](./src/bin/13.rs) | `41.2µs` | `41.6µs` |
 | [Day 15](./src/bin/15.rs) | `161.4µs` | `621.1µs` |
 | [Day 16](./src/bin/16.rs) | `2.6ms` | `2.7ms` |
 
-**Total: 295.32ms**
+**Total: 300.45ms**
 <!--- benchmarking table --->
 

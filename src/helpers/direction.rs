@@ -222,10 +222,10 @@ impl From<Direction> for char {
 impl Display for Direction {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Up => write!(f, "{}", '^'),
-            Right => write!(f, "{}", '>'),
-            Down => write!(f, "{}", 'v'),
-            Left => write!(f, "{}", '<'),
+            Up => write!(f, "^"),
+            Right => write!(f, ">"),
+            Down => write!(f, "v"),
+            Left => write!(f, "<"),
         }
     }
 }

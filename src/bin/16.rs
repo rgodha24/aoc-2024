@@ -9,7 +9,7 @@ use advent_of_code::helpers::*;
 tiles!('S' => Start, 'E' => End, '.' => Empty, '#' => Wall);
 
 fn djikstras(grid: Grid<Tile>) -> Grid<DirectionMap<usize>> {
-    let start = grid.find(Tile::Start).unwrap();
+    let start = grid.find(Tile::Start).next().unwrap();
 
     let mut fastest = grid.map(|_, _| DirectionMap::new_cloned(usize::MAX));
     let mut heap = BinaryHeap::new();
@@ -59,7 +59,7 @@ fn djikstras(grid: Grid<Tile>) -> Grid<DirectionMap<usize>> {
 
 pub fn part_one(input: &str) -> Option<usize> {
     let grid: Grid<Tile> = Grid::from_chars(input);
-    let end = grid.find(Tile::End).unwrap();
+    let end = grid.find(Tile::End).next().unwrap();
     let fastest = djikstras(grid);
 
     fastest[end].into_iter().min()
@@ -67,7 +67,7 @@ pub fn part_one(input: &str) -> Option<usize> {
 
 pub fn part_two(input: &str) -> Option<usize> {
     let grid: Grid<Tile> = Grid::from_chars(input);
-    let end = grid.find(Tile::End).unwrap();
+    let end = grid.find(Tile::End).next().unwrap();
     let fastest = djikstras(grid);
     let mut visited = HashSet::new();
     fn backtrack(

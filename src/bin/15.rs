@@ -31,7 +31,7 @@ pub fn part_one(input: &str) -> Option<usize> {
     let moves = moves
         .trim()
         .chars()
-        .filter_map(|c| (!c.is_whitespace()).then(|| Direction::from(c)))
+        .filter(|&c| (!c.is_whitespace())).map(Direction::from)
         .collect_vec();
 
     let mut robot = grid
@@ -86,11 +86,11 @@ enum Tile2 {
 impl Display for Tile2 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Tile2::BoxL => write!(f, "{}", '['),
-            Tile2::BoxR => write!(f, "{}", ']'),
-            Tile2::Empty => write!(f, "{}", '.'),
-            Tile2::Wall => write!(f, "{}", '#'),
-            Tile2::Robot => write!(f, "{}", '@'),
+            Tile2::BoxL => write!(f, "["),
+            Tile2::BoxR => write!(f, "]"),
+            Tile2::Empty => write!(f, "."),
+            Tile2::Wall => write!(f, "#"),
+            Tile2::Robot => write!(f, "@"),
         }
     }
 }
@@ -101,7 +101,7 @@ pub fn part_two(input: &str) -> Option<usize> {
     let moves = moves
         .trim()
         .chars()
-        .filter_map(|c| (!c.is_whitespace()).then(|| Direction::from(c)))
+        .filter(|&c| (!c.is_whitespace())).map(Direction::from)
         .collect_vec();
 
     let mut robot = grid
@@ -147,26 +147,20 @@ pub fn part_two(input: &str) -> Option<usize> {
                         {
                             first_empty += direction;
                         }
-                        match enlarged_grid[first_empty] {
-                            // e.g. we found an empty tile somewhere ahead of the robot
-                            Tile2::Empty => {
-                                first_empty -= direction;
-                                assert!(robot.x.abs_diff(first_empty.x) % 2 == 0);
-                                for i in 0..robot.x.abs_diff(first_empty.x) as i64 {
-                                    enlarged_grid[(first_empty.cast() + direction
-                                        - (direction.as_point() * i))
-                                        .cast()] = match (i % 2, direction) {
-                                        (1, Direction::Right) | (0, Direction::Left) => Tile2::BoxL,
-                                        (0, Direction::Right) | (1, Direction::Left) => Tile2::BoxR,
-                                        _ => panic!("how did we get here?"),
-                                    };
-                                }
-                                robot += direction;
-                                enlarged_grid[robot] = Tile2::Empty;
+                        if enlarged_grid[first_empty] == Tile2::Empty {
+                            first_empty -= direction;
+                            assert!(robot.x.abs_diff(first_empty.x) % 2 == 0);
+                            for i in 0..robot.x.abs_diff(first_empty.x) as i64 {
+                                enlarged_grid[(first_empty.cast() + direction
+                                    - (direction.as_point() * i))
+                                    .cast()] = match (i % 2, direction) {
+                                    (1, Direction::Right) | (0, Direction::Left) => Tile2::BoxL,
+                                    (0, Direction::Right) | (1, Direction::Left) => Tile2::BoxR,
+                                    _ => panic!("how did we get here?"),
+                                };
                             }
-                            // either the search failed to go forward or we ran into a wall, so we do
-                            // nothing
-                            _ => {}
+                            robot += direction;
+                            enlarged_grid[robot] = Tile2::Empty;
                         }
                     }
                     Direction::Up | Direction::Down => {

@@ -1,7 +1,6 @@
 advent_of_code::solution!(9);
 use std::collections::HashSet;
 
-use advent_of_code::helpers::*;
 use itertools::Itertools;
 
 pub fn part_one(input: &str) -> Option<usize> {
@@ -53,7 +52,7 @@ fn print_tiles(tiles: &[Tile]) {
             Tile::Full { size, num } => print!("{}", num.to_string().repeat(*size)),
         }
     }
-    println!("");
+    println!();
 }
 
 pub fn part_two(input: &str) -> Option<usize> {

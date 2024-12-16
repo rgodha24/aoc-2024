@@ -1,30 +1,22 @@
 advent_of_code::solution!(11);
-use std::collections::{HashMap, HashSet};
-
 use advent_of_code::helpers::*;
-use itertools::Itertools;
+use std::collections::HashMap;
 
-fn digits(n: usize) -> u32 {
-    n.checked_ilog10().unwrap_or(0) + 1
-}
-
-pub fn part_one(input: &str) -> Option<usize> {
-    let mut nums: HashMap<usize, usize> = HashMap::new();
+fn solve(input: &str, steps: usize) -> u64 {
+    let mut nums: HashMap<u64, u64> = HashMap::new();
     for n in input.split_whitespace() {
-        let n: usize = n.parse().unwrap();
+        let n: u64 = n.parse().unwrap();
         *nums.entry(n).or_default() += 1;
     }
-    for _ in 0..25 {
-        println!("{:?}", nums);
-        let mut new_nums: HashMap<usize, usize> = HashMap::new();
+    for _ in 0..steps {
+        let mut new_nums: HashMap<u64, u64> = HashMap::new();
         for (k, v) in nums.iter() {
             if *k == 0 {
                 *new_nums.entry(1).or_default() += v;
             } else if digits(*k) % 2 == 0 {
-                let as_str = k.to_string();
-                println!("{as_str}");
-                let h1 = as_str[..as_str.len() / 2].parse().unwrap();
-                let h2 = as_str[as_str.len() / 2..].parse().unwrap();
+                let d = 10u64.pow(digits(*k) / 2);
+                let h1 = k / d;
+                let h2 = k % d;
                 *new_nums.entry(h1).or_default() += v;
                 *new_nums.entry(h2).or_default() += v;
             } else {
@@ -34,36 +26,15 @@ pub fn part_one(input: &str) -> Option<usize> {
         nums = new_nums;
     }
 
-    Some(nums.values().sum())
+    nums.values().sum()
 }
 
-pub fn part_two(input: &str) -> Option<usize> {
-    let mut nums: HashMap<usize, usize> = HashMap::new();
-    for n in input.split_whitespace() {
-        let n: usize = n.parse().unwrap();
-        *nums.entry(n).or_default() += 1;
-    }
-    for _ in 0..75 {
-        println!("{:?}", nums);
-        let mut new_nums: HashMap<usize, usize> = HashMap::new();
-        for (k, v) in nums.iter() {
-            if *k == 0 {
-                *new_nums.entry(1).or_default() += v;
-            } else if digits(*k) % 2 == 0 {
-                let as_str = k.to_string();
-                println!("{as_str}");
-                let h1 = as_str[..as_str.len() / 2].parse().unwrap();
-                let h2 = as_str[as_str.len() / 2..].parse().unwrap();
-                *new_nums.entry(h1).or_default() += v;
-                *new_nums.entry(h2).or_default() += v;
-            } else {
-                *new_nums.entry(k * 2024).or_default() += v;
-            }
-        }
-        nums = new_nums;
-    }
+pub fn part_one(input: &str) -> Option<u64> {
+    Some(solve(input, 25))
+}
 
-    Some(nums.values().sum())
+pub fn part_two(input: &str) -> Option<u64> {
+    Some(solve(input, 75))
 }
 
 #[cfg(test)]
