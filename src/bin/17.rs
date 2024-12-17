@@ -1,7 +1,6 @@
 advent_of_code::solution!(17);
 use std::str::FromStr;
 
-use indicatif::{ParallelProgressIterator, ProgressStyle};
 use itertools::Itertools;
 use rayon::prelude::*;
 
@@ -10,25 +9,42 @@ struct Computer {
     a: usize,
     b: usize,
     c: usize,
-    instructions: (u64, usize),
+    instructions: Instruction,
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct Instruction(usize, usize);
+impl Instruction {
+    fn as_str(&self) -> String {
+        let (output, n) = (self.0, self.1);
+
+        (0..n).rev().map(|i| (output >> i * 3) & 0b111).join(",")
+    }
+    #[inline]
+    fn at(&self, index: usize) -> (usize, usize) {
+        let instr = (self.0 >> ((self.1 - index - 2) * 3)) & 0b111111;
+        (instr >> 3, instr & 0b111)
+    }
+    #[inline]
+    fn can_become(&self, rhs: &Self) -> bool {
+        rhs.0 >> ((rhs.1 - self.1) * 3) == self.0
+    }
+}
+
 impl Computer {
-    fn solve(&self) -> (u64, usize) {
+    fn solve(&self, expected: Option<Instruction>) -> Option<Instruction> {
         let Computer {
             mut a,
             mut b,
             mut c,
             instructions,
         } = self;
-        let (instructions, count) = *instructions;
 
         let mut i = 0;
-        let mut output = 0u64;
-        let mut n = 0;
-        while i < count {
-            let instr = (instructions >> ((count - i - 2) * 3)) & 0b111111;
-            let (instr, literal) = (instr >> 3, instr & 0b111);
-            let combo = move || match literal {
+        let mut output = Instruction(0, 0);
+        while i < instructions.1 {
+            let (instr, literal) = instructions.at(i);
+            let combo = match literal {
                 n @ 0..=3 => n as usize,
                 4 => a,
                 5 => b,
@@ -36,13 +52,14 @@ impl Computer {
                 // we just assume we're not gonna use this lol
                 n => n as usize,
             };
+
             match instr {
                 // Adv
-                0 => a = a / (1 << combo()),
+                0 => a = a / (1 << combo),
                 // Bxl
                 1 => b = b ^ (literal as usize),
                 // Bst
-                2 => b = combo() & 0b111,
+                2 => b = combo & 0b111,
                 // Jnz
                 3 => {
                     if a != 0 {
@@ -59,45 +76,41 @@ impl Computer {
                 }
                 // Out
                 5 => {
-                    output = (output << 3) | (combo() as u64 & 0b111);
-                    n += 1;
+                    output.0 = (output.0 << 3) | (combo & 0b111);
+                    output.1 += 1;
+                    if expected.is_some_and(|expected| !output.can_become(&expected)) {
+                        return None;
+                    }
                 }
                 // Bdv
-                6 => b = a / (1 << combo()),
+                6 => b = a / (1 << combo),
                 // Cdv
-                7 => c = a / (1 << combo()),
+                7 => c = a / (1 << combo),
                 _ => unreachable!(),
             }
 
             i += 2;
         }
-        (output, n)
+
+        Some(output)
     }
 }
 
 pub fn part_one(input: &str) -> Option<String> {
     let computer: Computer = input.parse().unwrap();
-    Some(display(computer.solve()))
+    Some(computer.solve(None).unwrap().as_str())
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
     let computer: Computer = input.parse().unwrap();
 
-    (10usize.pow(14)..10usize.pow(15))
-        .into_par_iter()
-        .progress_with_style(
-            ProgressStyle::with_template("{human_pos}/{len} {wide_bar} {eta_precise}")
-                .expect("valid progress bar"),
-        )
-        .find_first(|a| {
-            let mut computer = computer;
-            computer.a = *a;
-            computer.solve() == computer.instructions
-        })
-}
-
-fn display((output, n): (u64, usize)) -> String {
-    (0..n).rev().map(|i| (output >> i * 3) & 0b111).join(",")
+    (0..10usize.pow(15)).into_par_iter().find_first(|a| {
+        let mut computer = computer;
+        computer.a = *a;
+        computer
+            .solve(Some(computer.instructions))
+            .is_some_and(|instr| instr == computer.instructions)
+    })
 }
 
 impl FromStr for Computer {
@@ -115,14 +128,12 @@ impl FromStr for Computer {
             instructions[9..]
                 .trim()
                 .split(",")
-                .fold((0, 0), |(instructions, count), n| {
-                    (
-                        (instructions << 3) | (n.parse::<u64>().unwrap() & 0b111),
-                        count + 1,
+                .fold(Instruction(0, 0), |instruction, n| {
+                    Instruction(
+                        (instruction.0 << 3) | (n.parse::<usize>().unwrap() & 0b111),
+                        instruction.1 + 1,
                     )
                 });
-
-        println!("{}", display(instructions));
 
         Ok(Self {
             a,
