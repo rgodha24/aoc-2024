@@ -1,4 +1,6 @@
 advent_of_code::solution!(17);
+use std::str::FromStr;
+
 use advent_of_code::helpers::*;
 use itertools::Itertools;
 
@@ -14,70 +16,102 @@ enum Instruction {
     Cdv,
 }
 
-pub fn part_one(input: &str) -> Option<String> {
-    let (registers, instructions) = input.split_once("\n\n").unwrap();
-    let (mut a, mut b, mut c) = registers
-        .lines()
-        .map(|line| (line.split_once(": ").unwrap().1).parse::<usize>().unwrap())
-        .collect_tuple()
-        .unwrap();
-    let instructions: Vec<(Instruction, usize)> = instructions[9..]
-        .trim()
-        .split(",")
-        .tuples()
-        .map(|(instr, n)| {
-            use Instruction::*;
-            (
-                [Adv, Bxl, Bst, Jnz, Bxc, Out, Bdv, Cdv][(instr).parse::<usize>().unwrap()],
-                n.parse().unwrap(),
-            )
-        })
-        .collect_vec();
+#[derive(Clone, Debug)]
+struct Computer {
+    a: usize,
+    b: usize,
+    c: usize,
+    instructions: Vec<(Instruction, usize)>,
+}
+impl Computer {
+    fn solve(self) -> Vec<usize> {
+        let Computer {
+            mut a,
+            mut b,
+            mut c,
+            instructions,
+        } = self;
 
-    let mut i = 0;
-    let mut output = Vec::new();
-    while i < instructions.len() {
-        let (instruction, literal) = instructions[i].clone();
-        let combo = match literal {
-            0..=3 => literal,
-            4 => a,
-            5 => b,
-            6 => c,
-            _ => usize::MAX,
-        };
-        match instruction {
-            Instruction::Adv => a = a / (1 << combo),
-            Instruction::Bxl => b = b ^ literal,
-            Instruction::Bst => b = combo & 0b111,
-            Instruction::Jnz => {
-                if a != 0 {
-                    assert!(literal % 2 == 0);
-                    if i != literal as usize / 2 {
-                        i = literal as usize / 2;
-                        continue;
+        let mut i = 0;
+        let mut output = Vec::new();
+        while i < instructions.len() {
+            let (instruction, literal) = instructions[i].clone();
+            let combo = match literal {
+                0..=3 => literal,
+                4 => a,
+                5 => b,
+                6 => c,
+                _ => usize::MAX,
+            };
+            match instruction {
+                Instruction::Adv => a = a / (1 << combo),
+                Instruction::Bxl => b = b ^ literal,
+                Instruction::Bst => b = combo & 0b111,
+                Instruction::Jnz => {
+                    if a != 0 {
+                        assert!(literal % 2 == 0);
+                        if i != literal as usize / 2 {
+                            i = literal as usize / 2;
+                            continue;
+                        }
                     }
                 }
+                Instruction::Bxc => {
+                    b = b ^ c;
+                }
+                Instruction::Out => {
+                    output.push(combo & 0b111);
+                }
+                Instruction::Bdv => b = a / (1 << combo),
+                Instruction::Cdv => c = a / (1 << combo),
             }
-            Instruction::Bxc => {
-                b = b ^ c;
-            }
-            Instruction::Out => {
-                output.push(combo & 0b111);
-            }
-            Instruction::Bdv => b = a / (1 << combo),
-            Instruction::Cdv => c = a / (1 << combo),
+
+            i += 1;
         }
-
-        i += 1;
+        output
     }
+}
 
-    Some(output.into_iter().join(","))
+pub fn part_one(input: &str) -> Option<String> {
+    let computer: Computer = input.parse().unwrap();
+    Some(computer.solve().into_iter().join(","))
 }
 
 pub fn part_two(input: &str) -> Option<i64> {
     None
 }
 
+impl FromStr for Computer {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (registers, instructions) = s.split_once("\n\n").unwrap();
+        let (a, b, c) = registers
+            .lines()
+            .map(|line| (line.split_once(": ").unwrap().1).parse().unwrap())
+            .collect_tuple()
+            .unwrap();
+        let instructions: Vec<(Instruction, usize)> = instructions[9..]
+            .trim()
+            .split(",")
+            .tuples()
+            .map(|(instr, n)| {
+                use Instruction::*;
+                (
+                    [Adv, Bxl, Bst, Jnz, Bxc, Out, Bdv, Cdv][(instr).parse::<usize>().unwrap()],
+                    n.parse().unwrap(),
+                )
+            })
+            .collect_vec();
+
+        Ok(Self {
+            a,
+            b,
+            c,
+            instructions,
+        })
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
