@@ -49,6 +49,9 @@ impl<T, const W: usize> Grid<T, W> {
     pub fn height(&self) -> usize {
         self.data.len()
     }
+    pub fn dimensions(&self) -> Point {
+        Point::new(self.width(), self.height())
+    }
     pub fn from_lines(input: &str, line: impl Fn(&str) -> SmallVec<[T; W]>) -> Self {
         let data = input.lines().map(line).collect();
         Self { data }

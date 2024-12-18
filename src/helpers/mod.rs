@@ -26,8 +26,9 @@ pub fn digits(n: u64) -> u32 {
 #[macro_export]
 macro_rules! tiles {
     ($($char:expr => $name:ident),*) => {
-        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
         enum Tile {
+            #[default]
             $($name,)*
         }
 
@@ -46,7 +47,7 @@ macro_rules! tiles {
                 }
             }
         }
-        impl Display for Tile {
+        impl std::fmt::Display for Tile {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 let c: char = (*self).into();
                 write!(f, "{}", c)
