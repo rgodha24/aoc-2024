@@ -39,6 +39,8 @@ impl Computer {
                 n => n as usize,
             };
 
+            i += 2;
+
             match instr {
                 // Adv
                 0 => a = a / (1 << combo),
@@ -48,12 +50,8 @@ impl Computer {
                 2 => b = combo & 0b111,
                 // Jnz
                 3 => {
-                    if a != 0 {
-                        let n = literal as usize;
-                        if i != n {
-                            i = n;
-                            continue;
-                        }
+                    if a != 0 && i != literal {
+                        i = literal;
                     }
                 }
                 // Bxc
@@ -71,8 +69,6 @@ impl Computer {
                 7 => c = a / (1 << combo),
                 _ => unreachable!(),
             }
-
-            i += 2;
         }
 
         output
