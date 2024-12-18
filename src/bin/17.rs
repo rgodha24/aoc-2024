@@ -1,14 +1,9 @@
 advent_of_code::solution!(17);
-use std::str::FromStr;
 
 use itertools::Itertools;
-use rayon::prelude::*;
 
 #[derive(Clone, Copy, Debug)]
 struct Computer {
-    a: usize,
-    b: usize,
-    c: usize,
     instructions: Instruction,
 }
 
@@ -25,20 +20,15 @@ impl Instruction {
         let instr = (self.0 >> ((self.1 - index - 2) * 3)) & 0b111111;
         (instr >> 3, instr & 0b111)
     }
-    #[inline]
-    fn can_become(&self, rhs: &Self) -> bool {
-        rhs.0 >> ((rhs.1 - self.1) * 3) == self.0
+    fn compile(self) -> Computer {
+        // TODO: jit compile this?
+        Computer { instructions: self }
     }
 }
 
 impl Computer {
-    fn solve(&self, expected: Option<Instruction>) -> Option<Instruction> {
-        let Computer {
-            mut a,
-            mut b,
-            mut c,
-            instructions,
-        } = self;
+    fn solve(&self, mut a: usize, mut b: usize, mut c: usize) -> Instruction {
+        let Computer { instructions } = self;
 
         let mut i = 0;
         let mut output = Instruction(0, 0);
@@ -78,9 +68,6 @@ impl Computer {
                 5 => {
                     output.0 = (output.0 << 3) | (combo & 0b111);
                     output.1 += 1;
-                    if expected.is_some_and(|expected| !output.can_become(&expected)) {
-                        return None;
-                    }
                 }
                 // Bdv
                 6 => b = a / (1 << combo),
@@ -92,57 +79,66 @@ impl Computer {
             i += 2;
         }
 
-        Some(output)
+        output
     }
 }
 
 pub fn part_one(input: &str) -> Option<String> {
-    let computer: Computer = input.parse().unwrap();
-    Some(computer.solve(None).unwrap().as_str())
+    let (a, b, c, instructions) = parse(input);
+    let computer = instructions.compile();
+    Some(computer.solve(a, b, c).as_str())
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    let computer: Computer = input.parse().unwrap();
+    let (_, b, c, instructions) = parse(input);
+    let computer = instructions.compile();
 
-    (0..10usize.pow(15)).into_par_iter().find_first(|a| {
-        let mut computer = computer;
-        computer.a = *a;
-        computer
-            .solve(Some(computer.instructions))
-            .is_some_and(|instr| instr == computer.instructions)
-    })
+    find_a(computer, 0, b, c, 0)
 }
 
-impl FromStr for Computer {
-    type Err = ();
+fn find_a(computer: Computer, curr_a: usize, b: usize, c: usize, depth: usize) -> Option<usize> {
+    // b == 0 and c == 0 in the input but might as well just pass it in
+    let output = computer.solve(curr_a, b, c);
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (registers, instructions) = s.split_once("\n\n").unwrap();
-        let (a, b, c) = registers
-            .lines()
-            .map(|line| (line.split_once(": ").unwrap().1).parse().unwrap())
-            .collect_tuple()
-            .unwrap();
+    if output == computer.instructions {
+        return Some(curr_a);
+    }
 
-        let instructions =
-            instructions[9..]
-                .trim()
-                .split(",")
-                .fold(Instruction(0, 0), |instruction, n| {
-                    Instruction(
-                        (instruction.0 << 3) | (n.parse::<usize>().unwrap() & 0b111),
-                        instruction.1 + 1,
-                    )
-                });
-
-        Ok(Self {
-            a,
-            b,
-            c,
-            instructions,
-        })
+    // this if condition is making sure the last `depth * 3` bits
+    // of the instructions equals our current output
+    if (output.0 ^ computer.instructions.0) & ((1 << (depth * 3)) - 1) == 0 {
+        (0b000..=0b111)
+            // dfs lower on all of the options for the next 3 bits
+            .filter_map(|a| find_a(computer, (curr_a << 3) | a, b, c, depth + 1))
+            // and choose the lowest a value if there is one
+            .min()
+    } else {
+        None
     }
 }
+
+fn parse(s: &str) -> (usize, usize, usize, Instruction) {
+    let (registers, instructions) = s.split_once("\n\n").unwrap();
+    let (a, b, c) = registers
+        .lines()
+        .map(|line| (line.split_once(": ").unwrap().1).parse().unwrap())
+        .collect_tuple()
+        .unwrap();
+
+    let instructions =
+        instructions[9..]
+            .trim()
+            .split(",")
+            .fold(Instruction(0, 0), |instruction, n| {
+                Instruction(
+                    (instruction.0 << 3) | (n.parse::<usize>().unwrap() & 0b111),
+                    instruction.1 + 1,
+                )
+            });
+
+    (a, b, c, instructions)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
