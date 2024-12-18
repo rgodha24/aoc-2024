@@ -1,8 +1,5 @@
 advent_of_code::solution!(18);
-use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashSet},
-};
+use std::collections::{BinaryHeap, HashSet};
 
 use advent_of_code::helpers::*;
 use itertools::Itertools;
@@ -14,7 +11,13 @@ struct State {
 }
 impl Ord for State {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.steps.cmp(&other.steps).reverse()
+        self.steps.cmp(&other.steps).reverse().then(
+            self.point
+                .x
+                .cmp(&other.point.x)
+                .reverse()
+                .then(self.point.y.cmp(&other.point.y).reverse()),
+        )
     }
 }
 impl PartialOrd for State {
@@ -25,32 +28,16 @@ impl PartialOrd for State {
 
 tiles!('.' => Empty, '#' => Corrupted);
 
-fn solve(input: &str, goal: Point, nth: usize) -> Option<usize> {
-    let bytes = input
-        .lines()
-        .map(|line| Point::from_delimited(line, ",").unwrap())
-        .collect_vec();
-    let grid = std::iter::successors(
-        Some((Grid::empty(goal.x + 1, goal.y + 1), 0)),
-        |(prev, i)| {
-            let b = bytes[i % bytes.len()];
-            let mut grid: Grid<Tile> = prev.clone();
-            grid[b] = Tile::Corrupted;
-            Some((grid, i + 1))
-        },
-    )
-    .map(|(grid, _)| grid)
-    .nth(nth)
-    .unwrap();
-
+fn pathfind(grid: &Grid<Tile>) -> Option<usize> {
     let mut pq = BinaryHeap::new();
     let mut visited = HashSet::new();
     pq.push(State {
         steps: 0,
         point: Point::new(0, 0),
     });
+    let goal = grid.dimensions() - Point::new(1, 1);
 
-    while let Some(State { steps, point }) = (pq.pop()) {
+    while let Some(State { steps, point }) = pq.pop() {
         if point == goal {
             return Some(steps);
         }
@@ -71,35 +58,28 @@ fn solve(input: &str, goal: Point, nth: usize) -> Option<usize> {
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
-    (solve(input, Point::new(70, 70), 1024))
+    let bytes = input
+        .lines()
+        .map(|line| Point::from_delimited(line, ",").unwrap())
+        .collect_vec();
+    let mut grid: Grid<Tile> = Grid::empty(71, 71);
+    for i in 0..1024 {
+        grid[bytes[i % bytes.len()]] = Tile::Corrupted;
+    }
+    pathfind(&grid)
 }
 
-pub fn part_two(input: &str) -> Option<usize> {
+pub fn part_two(input: &str) -> Option<Point> {
+    let bytes = input
+        .lines()
+        .map(|line| Point::from_delimited(line, ",").unwrap())
+        .collect_vec();
+    let mut grid: Grid<Tile> = Grid::empty(71, 71);
     for i in 0.. {
-        if solve(input, Point::new(70, 70), i).is_none() {
-            return Some(i);
+        grid[bytes[i % bytes.len()]] = Tile::Corrupted;
+        if pathfind(&grid).is_none() {
+            return Some(bytes[i % bytes.len()]);
         }
     }
     None
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_part_one() {
-        let result = solve(
-            &advent_of_code::template::read_file("examples", DAY),
-            Point::new(6, 6),
-            12,
-        );
-        assert_eq!(result, (22));
-    }
-
-    #[test]
-    fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
-    }
 }

@@ -4,7 +4,7 @@ use std::{
     str::FromStr,
 };
 
-use num::{BigInt, Num, NumCast, Signed};
+use num::{BigInt, Bounded, Num, NumCast, Signed};
 /// a point in a 2d space
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GenericPoint<N: Num + Clone + Copy> {
@@ -19,8 +19,14 @@ pub type Point = GenericPoint<usize>;
 /// 2d point backed by num::BigInt for arbitrary sized numbers
 pub type BIPoint = GenericPoint<BigInt>;
 
+impl<N: Num + Clone + Copy + Bounded> GenericPoint<N> {
+    pub fn max() -> Self {
+        Self::new(N::max_value(), N::max_value())
+    }
+}
+
 impl<N: Num + Clone + Copy> GenericPoint<N> {
-    pub fn new(x: N, y: N) -> Self {
+    pub const fn new(x: N, y: N) -> Self {
         Self { x, y }
     }
 
@@ -69,7 +75,7 @@ impl<N: Num + Clone + Copy> GenericPoint<N> {
     where
         N: Signed,
     {
-        num::abs(self.x - rhs.x) + num::abs(self.y - rhs.y)
+        num::abs_sub(self.x, rhs.x) + num::abs_sub(self.y, rhs.y)
     }
 
     pub fn as_point(self) -> Option<Point>
