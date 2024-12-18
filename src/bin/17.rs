@@ -1,6 +1,7 @@
 advent_of_code::solution!(17);
 
 use itertools::Itertools;
+use std::fmt::Display;
 
 #[derive(Clone, Copy, Debug)]
 struct Computer {
@@ -8,13 +9,8 @@ struct Computer {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct Instruction(usize, usize);
+pub struct Instruction(usize, usize);
 impl Instruction {
-    fn as_str(&self) -> String {
-        let (output, n) = (self.0, self.1);
-
-        (0..n).rev().map(|i| (output >> i * 3) & 0b111).join(",")
-    }
     #[inline]
     fn at(&self, index: usize) -> (usize, usize) {
         let instr = (self.0 >> ((self.1 - index - 2) * 3)) & 0b111111;
@@ -83,10 +79,10 @@ impl Computer {
     }
 }
 
-pub fn part_one(input: &str) -> Option<String> {
+pub fn part_one(input: &str) -> Option<Instruction> {
     let (a, b, c, instructions) = parse(input);
     let computer = instructions.compile();
-    Some(computer.solve(a, b, c).as_str())
+    Some(computer.solve(a, b, c))
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
@@ -137,6 +133,17 @@ fn parse(s: &str) -> (usize, usize, usize, Instruction) {
             });
 
     (a, b, c, instructions)
+}
+
+impl Display for Instruction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let (output, n) = (self.0, self.1);
+        write!(
+            f,
+            "{}",
+            (0..n).rev().map(|i| (output >> i * 3) & 0b111).join(",")
+        )
+    }
 }
 
 #[cfg(test)]
@@ -200,7 +207,10 @@ Program: 4,0,5,5
         "2"
     )]
     fn test_part_one(#[case] input: &str, #[case] output: &str) {
-        assert_eq!(part_one(input), Some(output.to_string()));
+        assert_eq!(
+            part_one(input).map(|instr| instr.to_string()),
+            Some(output.to_string())
+        );
     }
 
     #[test]
