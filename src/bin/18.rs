@@ -74,12 +74,20 @@ pub fn part_two(input: &str) -> Option<Point> {
         .lines()
         .map(|line| Point::from_delimited(line, ",").unwrap())
         .collect_vec();
-    let mut grid: Grid<Tile> = Grid::empty(71, 71);
-    for i in 0.. {
-        grid[bytes[i % bytes.len()]] = Tile::Corrupted;
-        if pathfind(&grid).is_none() {
-            return Some(bytes[i % bytes.len()]);
+    let grid: Grid<Tile> = Grid::empty(71, 71);
+
+    let mut l = 0;
+    let mut r = bytes.len() - 1;
+    while l < r {
+        let m = (r + l) / 2;
+        let mut g = grid.clone();
+        for b in bytes.iter().take(m).cloned() {
+            g[b] = Tile::Corrupted;
+        }
+        match pathfind(&g) {
+            Some(_) => l = m + 1,
+            None => r = m - 1,
         }
     }
-    None
+    Some(bytes[r])
 }
