@@ -41,9 +41,6 @@ fn solve(input: &str, cheat_distance: i64, threshold: usize) -> usize {
             })
         })
         .filter_map(|(cs, ce, distance)| {
-            if grid[cs.cast()] == Tile::Wall {
-                return None;
-            }
             match grid.get(ce) {
                 None | Some(Tile::Wall) => {
                     // doesn't save us any time
@@ -94,9 +91,7 @@ mod tests {
     #[case(20, 80, 0)]
     fn test_day_20(#[case] distance: i64, #[case] threshold: usize, #[case] amount: usize) {
         let s = &advent_of_code::template::read_file("examples", DAY);
-        let count = solve(s, distance)
-            .filter(|saved| *saved >= threshold)
-            .count();
+        let count = solve(s, distance, threshold);
         assert_eq!(count, amount);
     }
 }
