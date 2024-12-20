@@ -1,7 +1,6 @@
 advent_of_code::solution!(9);
 use std::collections::HashSet;
 
-use itertools::Itertools;
 
 pub fn part_one(input: &str) -> Option<usize> {
     let mut blocks = Vec::new();
@@ -14,7 +13,6 @@ pub fn part_one(input: &str) -> Option<usize> {
 
     let mut i = 0;
     let mut j = blocks.len() - 1;
-    // dbg!(&blocks);
     while i < j {
         while i < j && blocks[i].is_some() {
             i += 1;
@@ -29,7 +27,6 @@ pub fn part_one(input: &str) -> Option<usize> {
         }
     }
 
-    // dbg!(&blocks);
     Some(
         blocks
             .into_iter()
@@ -43,16 +40,6 @@ pub fn part_one(input: &str) -> Option<usize> {
 enum Tile {
     Empty(usize),
     Full { size: usize, num: usize },
-}
-
-fn print_tiles(tiles: &[Tile]) {
-    for t in tiles {
-        match t {
-            Tile::Empty(size) => print!("{}", ".".repeat(*size)),
-            Tile::Full { size, num } => print!("{}", num.to_string().repeat(*size)),
-        }
-    }
-    println!();
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
@@ -90,12 +77,6 @@ pub fn part_two(input: &str) -> Option<usize> {
             continue;
         };
 
-        // print_tiles(&blocks);
-        // println!(
-        //     "j{} num{} fei{} feblock{} j{}",
-        //     j, num, first_empty_i, feblock, j
-        // );
-
         if first_empty_i > j {
             continue;
         }
@@ -103,30 +84,11 @@ pub fn part_two(input: &str) -> Option<usize> {
         blocks.swap(j, first_empty_i);
         blocks[j] = Tile::Empty(size);
         blocks.insert(first_empty_i + 1, Tile::Empty(feblock - size));
-        // print_tiles(&blocks);
     }
 
-    // for (j, to_move) in blocks.iter().cloned().enumerate().rev() {
-    //     assert_eq!(to_move, blocks[j]);
-    //     let Tile::Full { size, num } = to_move else {
-    //         continue;
-    //     };
-    //
-    //     let Some((first_empty_i, feblock)) = blocks.iter().enumerate().find_map(|(i, t)| {
-    //         let Tile::Empty(esize) = t else {
-    //             return None;
-    //         };
-    //
-    //         (*esize >= size).then_some((i, *esize))
-    //     }) else {
-    //         continue;
-    //     };
-    //
-    // }
 
     let mut ans = 0;
     let mut i = 0;
-    // dbg!(&blocks);
     for tile in blocks {
         match tile {
             Tile::Empty(size) => i += size,
