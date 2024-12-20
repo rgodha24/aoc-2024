@@ -4,22 +4,25 @@ use advent_of_code::helpers::*;
 
 tiles!('.' => Empty, '#' => Wall, 'S' => Start, 'E' => End);
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct State(usize, Point);
+
 fn solve(input: &str, cheat_distance: i64) -> impl Iterator<Item = usize> {
-    let grid: Grid<Tile> = Grid::from_chars(input);
+    let grid: Grid<Tile, 142> = Grid::from_chars(input);
     let start = grid.find(Tile::Start).next().unwrap();
     let end = grid.find(Tile::End).next().unwrap();
-    let mut fastest: Grid<usize> = grid.empty_sized();
+    let mut fastest = grid.empty_sized();
     fastest.fill(usize::MAX);
-    let mut q = vec![(0, start)];
+    let mut q = vec![State(0, start)];
 
-    while let Some((cost, point)) = q.pop() {
+    while let Some(State(cost, point)) = q.pop() {
         if fastest[point] <= cost {
             continue;
         }
         fastest[point] = cost;
         for neighbor in grid.neighbors_of(point) {
-            if grid[neighbor] != Tile::Wall {
-                q.push((cost + 1, neighbor));
+            if grid[neighbor] != Tile::Wall && fastest[neighbor] > cost + 1 {
+                q.push(State(cost + 1, neighbor));
             }
         }
     }
@@ -29,17 +32,17 @@ fn solve(input: &str, cheat_distance: i64) -> impl Iterator<Item = usize> {
     grid.points()
         .flat_map(move |point| {
             (-cheat_distance..=cheat_distance).flat_map(move |x| {
-                (-cheat_distance..=cheat_distance).filter_map(move |y| {
-                    let distance = x.abs() + y.abs();
-                    (distance <= cheat_distance).then_some((
+                let max_y = cheat_distance - x.abs();
+                (-max_y..=max_y).map(move |y| {
+                    (
                         point,
                         point + SignedPoint::new(x, y),
-                        distance as usize,
-                    ))
+                        (y.abs() + x.abs()) as usize,
+                    )
                 })
             })
         })
-        .flat_map(move |(cs, ce, distance)| {
+        .filter_map(move |(cs, ce, distance)| {
             if grid[cs.cast()] == Tile::Wall {
                 return None;
             }
