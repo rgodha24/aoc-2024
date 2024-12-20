@@ -24,7 +24,7 @@ fn solve(input: &str, cheat_distance: i64, threshold: usize) -> usize {
         }
     }
 
-    let start_to_end = fastest[end];
+    let ste = fastest[end];
 
     grid.points()
         .filter(|p| matches!(&grid[p.cast()], Tile::Empty | Tile::Start))
@@ -40,28 +40,26 @@ fn solve(input: &str, cheat_distance: i64, threshold: usize) -> usize {
                 })
             })
         })
-        .filter_map(|(cs, ce, distance)| {
-            match grid.get(ce) {
-                None | Some(Tile::Wall) => {
-                    // doesn't save us any time
-                    None
-                }
+        .filter_map(
+            |(cheat_start, cheat_end, distance)| match grid.get(cheat_end) {
+                None | Some(Tile::Wall) => None,
                 Some(_) => {
-                    let before_cheat_time = fastest[cs.cast()];
-                    let after_cheat_time = fastest[ce.cast()];
+                    let bct = fastest[cheat_start.cast()];
+                    let act = fastest[cheat_end.cast()];
 
-                    if after_cheat_time > start_to_end {
-                        Some(
-                            (after_cheat_time - start_to_end) + (before_cheat_time - start_to_end)
-                                - distance,
-                        )
+                    if act > ste {
+                        // if we cheated to a spot further away from start than the distance, the
+                        // distance from us to the end is (act - ste), and the distance from the cheat
+                        // start point is (bct - ste). the sum of those 2 numbers, minus the
+                        // distance, is the amount of time we've saved with this cheat
+                        Some((act - ste) + (bct - ste) - distance)
                     } else {
-                        (after_cheat_time > before_cheat_time)
-                            .then(|| (after_cheat_time - before_cheat_time - distance))
+                        // return how much time we saved as long as it's positive
+                        act.checked_sub(bct + distance)
                     }
                 }
-            }
-        })
+            },
+        )
         .filter(|saved| *saved >= threshold)
         .count()
 }
