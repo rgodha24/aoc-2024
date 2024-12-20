@@ -4,7 +4,7 @@ use advent_of_code::helpers::*;
 
 tiles!('.' => Empty, '#' => Wall, 'S' => Start, 'E' => End);
 
-fn solve(input: &str, cheat_distance: i64) -> impl Iterator<Item = usize> {
+fn solve(input: &str, cheat_distance: i64, threshold: usize) -> usize {
     let grid: Grid<Tile, 142> = Grid::from_chars(input);
     let start = grid.find(Tile::Start).next().unwrap();
     let end = grid.find(Tile::End).next().unwrap();
@@ -27,6 +27,7 @@ fn solve(input: &str, cheat_distance: i64) -> impl Iterator<Item = usize> {
     let start_to_end = fastest[end];
 
     grid.points()
+        .filter(|p| matches!(&grid[p.cast()], Tile::Empty | Tile::Start))
         .flat_map(move |point| {
             (-cheat_distance..=cheat_distance).flat_map(move |x| {
                 let max_y = cheat_distance - x.abs();
@@ -39,7 +40,7 @@ fn solve(input: &str, cheat_distance: i64) -> impl Iterator<Item = usize> {
                 })
             })
         })
-        .filter_map(move |(cs, ce, distance)| {
+        .filter_map(|(cs, ce, distance)| {
             if grid[cs.cast()] == Tile::Wall {
                 return None;
             }
@@ -64,14 +65,16 @@ fn solve(input: &str, cheat_distance: i64) -> impl Iterator<Item = usize> {
                 }
             }
         })
+        .filter(|saved| *saved >= threshold)
+        .count()
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
-    Some(solve(input, 2).filter(|saved| *saved >= 100).count())
+    Some(solve(input, 2, 100))
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
-    Some(solve(input, 20).filter(|saved| *saved >= 100).count())
+    Some(solve(input, 20, 100))
 }
 
 #[cfg(test)]
