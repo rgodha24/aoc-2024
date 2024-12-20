@@ -4,25 +4,22 @@ use advent_of_code::helpers::*;
 
 tiles!('.' => Empty, '#' => Wall, 'S' => Start, 'E' => End);
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct State(usize, Point);
-
 fn solve(input: &str, cheat_distance: i64) -> impl Iterator<Item = usize> {
     let grid: Grid<Tile, 142> = Grid::from_chars(input);
     let start = grid.find(Tile::Start).next().unwrap();
     let end = grid.find(Tile::End).next().unwrap();
     let mut fastest = grid.empty_sized();
     fastest.fill(usize::MAX);
-    let mut q = vec![State(0, start)];
+    let mut q = vec![(0, start)];
 
-    while let Some(State(cost, point)) = q.pop() {
+    while let Some((cost, point)) = q.pop() {
         if fastest[point] <= cost {
             continue;
         }
         fastest[point] = cost;
         for neighbor in grid.neighbors_of(point) {
             if grid[neighbor] != Tile::Wall && fastest[neighbor] > cost + 1 {
-                q.push(State(cost + 1, neighbor));
+                q.push((cost + 1, neighbor));
             }
         }
     }
