@@ -40,8 +40,11 @@ fn solve(input: &str, cheat_distance: i64, threshold: usize) -> usize {
                 })
             })
         })
-        .filter_map(
-            |(cheat_start, cheat_end, distance)| match grid.get(cheat_end) {
+        .filter_map(|(cheat_start, cheat_end, distance)| {
+            if grid[cheat_start.cast()] == Tile::Wall {
+                return None;
+            }
+            match grid.get(cheat_end) {
                 None | Some(Tile::Wall) => None,
                 Some(_) => {
                     let bct = fastest[cheat_start.cast()];
@@ -58,8 +61,8 @@ fn solve(input: &str, cheat_distance: i64, threshold: usize) -> usize {
                         act.checked_sub(bct + distance)
                     }
                 }
-            },
-        )
+            }
+        })
         .filter(|saved| *saved >= threshold)
         .count()
 }
