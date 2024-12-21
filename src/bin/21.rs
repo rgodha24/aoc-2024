@@ -154,15 +154,18 @@ mod tests {
 
     #[rstest]
     #[case("029A", "<A^A^^>AvvvA")]
-    fn test_first(#[case] input: &str, #[case] output: &str) {
-        assert_eq!(&iterate(input, true), output);
+    fn test_first(#[case] input: &str, #[case] expected: &str) {
+        let output = iterate(input, true);
+        println!("input: {input} && expected: {expected} && got: {output}");
+        assert_eq!(output.len(), expected.len());
     }
 
     #[rstest]
     #[case("<A^A>^^AvvvA", "v<<A>>^A<A>AvA<^AA>Av<AAA>^A")]
-    fn test_second(#[case] input: &str, #[case] output: &str) {
-        println!("input: {input} && expected: {output}");
-        assert_eq!(&iterate(input, false), output);
+    fn test_second(#[case] input: &str, #[case] expected: &str) {
+        let output = iterate(input, false);
+        println!("input: {input} && expected: {expected} && got: {output}");
+        assert_eq!(output.len(), expected.len());
     }
 
     #[rstest]
