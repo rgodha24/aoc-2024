@@ -52,35 +52,37 @@ fn distance(from: SignedPoint, to: SignedPoint, depth: usize) -> usize {
         return usize::MAX;
     }
     if depth == 0 {
-        return from.manhattan_distance(&to).unsigned_abs() as usize;
+        return (from.manhattan_distance(&to).unsigned_abs()) as usize;
     }
 
-    let delta = from - to;
+    let delta = to - from;
     let (direction, amt) = match (delta.x == 0, delta.y == 0) {
         (true, true) => {
             // e.g. from == to
             return 0;
         }
         (true, false) => {
-            let direction = if delta.y > 0 { Down } else { Up };
+            let direction = if delta.y > 0 { Up } else { Down };
             (direction, delta.y.abs() as usize)
         }
         (false, true) => {
-            let direction = if delta.x > 0 { Right } else { Left };
+            let direction = if delta.x > 0 { Left } else { Right };
             (direction, delta.x.abs() as usize)
         }
         (false, false) => {
-            let (a, b) = (
-                { direction_as_coord(if delta.x > 0 { Right } else { Left }) },
-                { direction_as_coord(if delta.y > 0 { Down } else { Up }) },
-            );
+            let a = from + SignedPoint::new(delta.x, 0);
+            let b = from + SignedPoint::new(0, delta.y);
+            let a_cost = (distance(from, a, depth))
+                .checked_add(distance(a, to, depth))
+                .unwrap_or(usize::MAX);
+            let b_cost = (distance(from, b, depth))
+                .checked_add(distance(b, to, depth))
+                .unwrap_or(usize::MAX);
 
-            let a_cost = distance(from, a, depth) + distance(a, b, depth);
-            let b_cost = distance(from, b, depth) + distance(b, a, depth);
-
-            return a_cost.min(b_cost);
+            return a_cost.min(b_cost) + 1;
         }
     };
+    // println!("direction {direction} amt {amt}");
     let coord = direction_as_coord(direction);
 
     distance(A, coord, depth - 1) + amt + distance(coord, A, depth - 1)
@@ -91,13 +93,31 @@ fn solve(s: &str, depth: usize) -> usize {
 
     if a == SignedPoint::new(2, 3) {
         // e.g. 379A
-        todo!()
+        // coords
+        //     .into_iter()
+        //     .circular_tuple_windows()
+        //     .map(|(from, to)| {
+        //         let delta = to - from;
+        //         let lr = {
+        //             let direction = if delta.x > 0 { Left } else { Right };
+        //             (direction, delta.x.abs() as usize)
+        //         };
+        //         let ud = {
+        //             let direction = if delta.y > 0 { Up } else { Down };
+        //             (direction, delta.y.abs() as usize)
+        //         };
+        //         [(lr, ud), (ud, lr)]
+        //     }).multi_cartesian_product().map(|c| {
+        //
+        //     });
+        todo!();
     } else {
         // e.g <<^A
         coords
             .into_iter()
-            .tuple_windows()
-            .map(|(from, to)| distance(from, to, depth))
+            .circular_tuple_windows()
+            .inspect(|(from, to)| println!("inputting from {from} to {to}!"))
+            .map(|(from, to)| dbg!(distance(from, to, depth - 1) + 1))
             .sum()
     }
 }
@@ -122,8 +142,11 @@ mod tests {
     use rstest::*;
 
     #[rstest]
-    #[case("029A", "<A^A^^>AvvvA".len(), 1)]
+    #[case("<A", "v<<A>>^A".len(), 1)]
+    #[case("<^A", "v<<A>^A>A".len(), 1)]
     #[case("<A^A>^^AvvvA", "v<<A>>^A<A>AvA<^AA>Av<AAA>^A".len(), 1)]
+    #[case("v<<A>>^A<A>AvA<^AA>A<vAAA>^A", "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A".len(), 1)]
+    #[case("029A", 28, 2)]
     #[case("029A", 68, 3)]
     #[case("980A", 60, 3)]
     #[case("179A", 68, 3)]

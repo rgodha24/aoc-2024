@@ -77,7 +77,11 @@ impl<N: Num + Clone + Copy> GenericPoint<N> {
     where
         N: Signed,
     {
-        num::abs_sub(self.x, rhs.x) + num::abs_sub(self.y, rhs.y)
+        // abs_sub is a weird function..
+        num::abs_sub(self.x, rhs.x)
+            + num::abs_sub(rhs.x, self.x)
+            + num::abs_sub(self.y, rhs.y)
+            + num::abs_sub(rhs.y, self.y)
     }
 
     pub fn as_point(self) -> Option<Point>
