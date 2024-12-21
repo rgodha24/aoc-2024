@@ -5,6 +5,8 @@ use std::{
 };
 
 use num::{BigInt, Bounded, Num, NumCast, Signed};
+
+use super::Direction;
 /// a point in a 2d space
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct GenericPoint<N: Num + Clone + Copy> {
