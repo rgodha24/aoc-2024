@@ -56,44 +56,22 @@ fn iterate(buttons: &str, first: bool) -> String {
             'A' => a_coord,
             c => panic!("unknown char {c}"),
         };
-        let has_gap_problem = !first && curr.manhattan_distance(&c) == 4;
-        if has_gap_problem {
-            println!("{curr} to {c} has a gap problem");
-        }
         let delta = curr - c;
 
-        if has_gap_problem {
-            if first {
-                if delta.y > 0 {
-                    output.extend(repeat_n(Buttons::Direction(Up), delta.y as usize));
-                }
-                if delta.x > 0 {
-                    output.extend(repeat_n(Buttons::Direction(Left), delta.x as usize));
-                }
-                if delta.x < 0 {
-                    output.extend(repeat_n(Buttons::Direction(Right), (-delta.x) as usize));
-                }
-                if delta.y < 0 {
-                    output.extend(repeat_n(Buttons::Direction(Down), (-delta.y) as usize));
-                }
-            } else {
-                if delta.y < 0 {
-                    output.extend(repeat_n(Buttons::Direction(Down), (-delta.y) as usize));
-                }
-                if delta.x > 0 {
-                    output.extend(repeat_n(Buttons::Direction(Left), delta.x as usize));
-                }
-                if delta.x < 0 {
-                    output.extend(repeat_n(Buttons::Direction(Right), (-delta.x) as usize));
-                }
-                if delta.y > 0 {
-                    output.extend(repeat_n(Buttons::Direction(Up), delta.y as usize));
-                }
+        if first {
+            if delta.y > 0 {
+                output.extend(repeat_n(Buttons::Direction(Up), delta.y as usize));
             }
-        } else {
+            if delta.x > 0 {
+                output.extend(repeat_n(Buttons::Direction(Left), delta.x as usize));
+            }
             if delta.x < 0 {
                 output.extend(repeat_n(Buttons::Direction(Right), (-delta.x) as usize));
             }
+            if delta.y < 0 {
+                output.extend(repeat_n(Buttons::Direction(Down), (-delta.y) as usize));
+            }
+        } else {
             if delta.y > 0 {
                 output.extend(repeat_n(Buttons::Direction(Up), delta.y as usize));
             }
@@ -102,6 +80,9 @@ fn iterate(buttons: &str, first: bool) -> String {
             }
             if delta.x > 0 {
                 output.extend(repeat_n(Buttons::Direction(Left), delta.x as usize));
+            }
+            if delta.x < 0 {
+                output.extend(repeat_n(Buttons::Direction(Right), (-delta.x) as usize));
             }
         }
         output.push(Buttons::Activate);
