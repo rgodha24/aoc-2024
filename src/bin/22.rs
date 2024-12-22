@@ -1,9 +1,9 @@
 advent_of_code::solution!(22);
-use std::collections::HashMap;
 
+use bitvec_simd::BitVec;
 use itertools::Itertools;
 
-fn iter_secret(secret: u64) -> impl Iterator<Item = u64> {
+fn secrets(secret: u64) -> impl Iterator<Item = u64> {
     std::iter::successors(Some(secret), |prev| {
         let mut secret = *prev;
         secret = ((secret * 64) ^ secret) % 16777216;
@@ -18,39 +18,39 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(
         input
             .lines()
-            .map(|l| iter_secret(l.parse().unwrap()).nth(2000).unwrap())
+            .map(|l| secrets(l.parse().unwrap()).nth(2000).unwrap())
             .sum(),
     )
 }
 
-pub fn part_two(input: &str) -> Option<i64> {
-    let buyers: Vec<HashMap<_, _>> = input
-        .lines()
-        .map(|l| {
-            let mut hm = HashMap::new();
-            for (k, v) in iter_secret(l.parse().unwrap())
-                .map(|n| n as i64 % 10)
-                .tuple_windows()
-                .map(|(a, b, c, d, e)| ((b - a, c - b, d - c, e - d), e))
-                .take(2000)
-            {
-                if hm.contains_key(&k) {
-                    continue;
-                }
-                hm.insert(k, v);
-            }
-            hm
-        })
-        .collect_vec();
+pub fn part_two(input: &str) -> Option<u16> {
+    const fn as_index((a, b, c, d): (i64, i64, i64, i64)) -> usize {
+        (a + 9) as usize * 19usize.pow(4)
+            + (b + 9) as usize * 19usize.pow(3)
+            + (c + 9) as usize * 19usize.pow(2)
+            + (d + 9) as usize * 19usize.pow(1)
+    }
+    const SIZE: usize = as_index((9, 9, 9, 9));
+    let mut prices = Box::new([0; SIZE]);
+    let mut visited = BitVec::zeros(SIZE);
 
-    itertools::iproduct!(-9..=9, -9..=9, -9..=9, -9..=9)
-        .map(|diffs| {
-            buyers
-                .iter()
-                .map(|hm| (hm.get(&diffs).cloned().unwrap_or(0)))
-                .sum()
-        })
-        .max()
+    for l in input.lines() {
+        visited.set_all_false();
+        for (k, v) in secrets(l.parse().unwrap())
+            .map(|n| n as i64 % 10)
+            .tuple_windows()
+            .map(|(a, b, c, d, e)| ((b - a, c - b, d - c, e - d), e as u16))
+            .take(2000)
+        {
+            let i = as_index(k);
+            if !visited.get(i).unwrap() {
+                prices[i] += v;
+                visited.set(i, true);
+            }
+        }
+    }
+
+    prices.into_iter().max()
 }
 
 #[cfg(test)]
@@ -70,7 +70,7 @@ mod tests {
 7753432
 5908254"#;
         let expected = expected.lines().map(|l| l.parse().unwrap()).collect_vec();
-        let iter = iter_secret(123);
+        let iter = secrets(123);
         assert_eq!(iter.skip(1).take(expected.len()).collect_vec(), expected);
     }
     #[test]
