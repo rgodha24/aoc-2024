@@ -345,15 +345,19 @@ impl<T, const W: usize> Grid<T, W> {
     }
 
     /// maps over self to create a new Grid
-    pub fn map<K: Clone + Default>(&self, f: impl Fn(&T, Point) -> K) -> Grid<K, W> {
-        let mut new_data = self.empty_sized();
-        for (y, row) in self.data.iter().enumerate() {
-            for (x, col) in row.iter().enumerate() {
-                let p = Point::new(x, y);
-                new_data[p] = f(col, p);
-            }
-        }
-        new_data
+    pub fn map<K: Clone>(&self, f: impl Fn(&T, Point) -> K) -> Grid<K, W> {
+        let data = self
+            .data
+            .iter()
+            .enumerate()
+            .map(|(y, row)| {
+                row.iter()
+                    .enumerate()
+                    .map(|(x, col)| f(col, Point::new(x, y)))
+                    .collect()
+            })
+            .collect();
+        Grid { data }
     }
 }
 

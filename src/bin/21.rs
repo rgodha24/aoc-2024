@@ -1,7 +1,70 @@
 advent_of_code::solution!(21);
 
+use std::collections::VecDeque;
+
 use advent_of_code::helpers::*;
 use itertools::Itertools;
+
+const NUMPAD: &str = r#"
+789
+456
+123
+ 0A
+"#;
+
+const DIRPAD: &str = r#"
+ ^A
+<v>
+"#;
+
+fn compute_fastest(pad: &str) -> Grid<Grid<Vec<String>>> {
+    let pad: Grid<char> = Grid::from_chars(pad.trim());
+    let mut output = pad.map(|_, _| pad.empty_sized());
+    for (from, to) in pad.points().collect_vec().into_iter().tuple_combinations() {
+        if pad[from] == ' ' || pad[to] == ' ' {
+            output[from][to] = vec![];
+        }
+        if from == to {
+            output[from][to] = vec!["A".to_string()];
+        }
+        println!("{from} {to}");
+
+        let mut q = VecDeque::from([(from, String::new())]);
+        let mut optimal = usize::MAX;
+        let mut possibilities = Vec::new();
+        'upper: while let Some((p, mut moves)) = q.pop_front() {
+            for direction in Direction::all() {
+                let neighbor = p + direction;
+                match pad.get(neighbor) {
+                    None | Some(' ') => {}
+                    Some(_) => {
+                        if neighbor == to {
+                        } else {
+                        }
+                        let mut s = s.clone();
+                        s.push(direction.into());
+                        q.push_back((neighbor.cast(), s));
+                    }
+                }
+            }
+        }
+
+        println!("{from} {to} {possibilities:?}");
+        output[from][to] = possibilities;
+    }
+
+    output
+}
+
+pub fn part_one(input: &str) -> Option<usize> {
+    let num_fastest = compute_fastest(NUMPAD);
+    println!("{:?}", num_fastest);
+    let mut sum = 0;
+    for l in input.lines() {
+        sum += l[..(l.len() - 1)].parse::<usize>().unwrap() * solve(l, 3);
+    }
+    Some(sum)
+}
 
 fn parse(input: &str) -> (Vec<SignedPoint>, SignedPoint) {
     let a_coord = if input.chars().any(|c| c.is_ascii_digit()) {
@@ -104,14 +167,6 @@ fn solve(s: &str, depth: usize) -> usize {
 }
 
 use Direction::*;
-
-pub fn part_one(input: &str) -> Option<usize> {
-    let mut sum = 0;
-    for l in input.lines() {
-        sum += l[..(l.len() - 1)].parse::<usize>().unwrap() * solve(l, 3);
-    }
-    Some(sum)
-}
 
 pub fn part_two(input: &str) -> Option<usize> {
     None
