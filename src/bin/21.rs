@@ -45,10 +45,9 @@ fn direction_as_coord(direction: Direction) -> SignedPoint {
     }
 }
 
-fn distance(from: SignedPoint, to: SignedPoint, depth: usize) -> usize {
-    const GAP: SignedPoint = SignedPoint::new(0, 0);
-    const A: SignedPoint = SignedPoint::new(2, 0);
-    if from == GAP || to == GAP {
+fn distance(from: SignedPoint, to: SignedPoint, depth: usize, activate: SignedPoint) -> usize {
+    let gap = activate - SignedPoint::new(2, 0);
+    if from == gap || to == gap {
         return usize::MAX;
     }
     if depth == 0 {
@@ -72,54 +71,36 @@ fn distance(from: SignedPoint, to: SignedPoint, depth: usize) -> usize {
         (false, false) => {
             let a = from + SignedPoint::new(delta.x, 0);
             let b = from + SignedPoint::new(0, delta.y);
-            let a_cost = (distance(from, a, depth))
-                .checked_add(distance(a, to, depth))
+            let a_cost = (distance(from, a, depth, activate))
+                .checked_add(distance(a, to, depth, activate))
                 .unwrap_or(usize::MAX);
-            let b_cost = (distance(from, b, depth))
-                .checked_add(distance(b, to, depth))
+            let b_cost = (distance(from, b, depth, activate))
+                .checked_add(distance(b, to, depth, activate))
                 .unwrap_or(usize::MAX);
 
-            return a_cost.min(b_cost) + 1;
+            return a_cost.min(b_cost);
         }
     };
     // println!("direction {direction} amt {amt}");
     let coord = direction_as_coord(direction);
 
-    distance(A, coord, depth - 1) + amt + distance(coord, A, depth - 1)
+    // if we're going downwards in depth, activate is always in the numpad position
+    distance(activate, coord, depth - 1, SignedPoint::new(0, 2))
+        + amt
+        + distance(coord, activate, depth - 1, SignedPoint::new(0, 2))
 }
 
 fn solve(s: &str, depth: usize) -> usize {
     let (coords, a) = parse(s);
 
-    if a == SignedPoint::new(2, 3) {
-        // e.g. 379A
-        // coords
-        //     .into_iter()
-        //     .circular_tuple_windows()
-        //     .map(|(from, to)| {
-        //         let delta = to - from;
-        //         let lr = {
-        //             let direction = if delta.x > 0 { Left } else { Right };
-        //             (direction, delta.x.abs() as usize)
-        //         };
-        //         let ud = {
-        //             let direction = if delta.y > 0 { Up } else { Down };
-        //             (direction, delta.y.abs() as usize)
-        //         };
-        //         [(lr, ud), (ud, lr)]
-        //     }).multi_cartesian_product().map(|c| {
-        //
-        //     });
-        todo!();
-    } else {
-        // e.g <<^A
-        coords
-            .into_iter()
-            .circular_tuple_windows()
-            .inspect(|(from, to)| println!("inputting from {from} to {to}!"))
-            .map(|(from, to)| dbg!(distance(from, to, depth - 1) + 1))
-            .sum()
-    }
+    println!("activate = {a}");
+
+    coords
+        .into_iter()
+        .circular_tuple_windows()
+        .inspect(|(from, to)| println!("inputting from {from} to {to}!"))
+        .map(|(from, to)| dbg!(distance(from, to, depth - 1, a) + 1))
+        .sum()
 }
 
 use Direction::*;
@@ -146,6 +127,9 @@ mod tests {
     #[case("<^A", "v<<A>^A>A".len(), 1)]
     #[case("<A^A>^^AvvvA", "v<<A>>^A<A>AvA<^AA>Av<AAA>^A".len(), 1)]
     #[case("v<<A>>^A<A>AvA<^AA>A<vAAA>^A", "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A".len(), 1)]
+    #[case("<A^A>^^AvvvA", "<vA<AA>>^AvAA<^A>A<v<A>>^AvA^A<vA>^A<v<A>^A>AAvA^A<v<A>A>^AAAvA<^A>A".len(), 2)]
+    #[case("0A", "<A>A".len(), 1)]
+    #[case("0A", "v<<A>^^AvA^A".len(), 2)]
     #[case("029A", 28, 2)]
     #[case("029A", 68, 3)]
     #[case("980A", 60, 3)]
@@ -155,37 +139,4 @@ mod tests {
     fn test_solve(#[case] input: &str, #[case] output_len: usize, #[case] depth: usize) {
         assert_eq!(solve(input, depth), output_len);
     }
-    //
-    // #[rstest]
-    // #[case("029A", "<A^A^^>AvvvA")]
-    // fn test_first(#[case] input: &str, #[case] expected: &str) {
-    //     let output = iterate(input, true);
-    //     println!("input: {input} && expected: {expected} && got: {output}");
-    //     assert_eq!(output.len(), expected.len());
-    // }
-    //
-    // #[rstest]
-    // #[case("<A^A>^^AvvvA", "v<<A>>^A<A>AvA<^AA>Av<AAA>^A")]
-    // fn test_second(#[case] input: &str, #[case] expected: &str) {
-    //     let output = iterate(input, false);
-    //     println!("input: {input} && expected: {expected} && got: {output}");
-    //     assert_eq!(output.len(), expected.len());
-    // }
-    //
-    // #[rstest]
-    // #[case("029A", 68)]
-    // #[case("980A", 60)]
-    // #[case("179A", 68)]
-    // #[case("456A", 64)]
-    // #[case("379A", 64)]
-    // fn test_full(#[case] input: &str, #[case] output_len: usize) {
-    //     println!("{input}. expected output length: {output_len}");
-    //     let iter_1 = iterate(input, true);
-    //     println!("{iter_1}");
-    //     let iter_2 = iterate(&iter_1, false);
-    //     println!("{iter_2}");
-    //     let iter_3 = iterate(&iter_2, false);
-    //     println!("{iter_3}");
-    //     assert_eq!(iter_3.len(), output_len);
-    // }
 }
