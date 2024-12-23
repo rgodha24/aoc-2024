@@ -54,7 +54,8 @@ my solutions for [Advent of Code](https://adventofcode.com/) 2024 in [Rust](http
 | [Day 19](./src/bin/19.rs) | `19.9ms` | `20.2ms` |
 | [Day 20](./src/bin/20.rs) | `567.5µs` | `27.1ms` |
 | [Day 22](./src/bin/22.rs) | `8.3ms` | `36.3ms` |
+| [Day 23](./src/bin/23.rs) | `168.5ms` | `67.8ms` |
 
-**Total: 415.00ms**
+**Total: 651.30ms**
 <!--- benchmarking table --->
 
