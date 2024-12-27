@@ -3,7 +3,7 @@ advent_of_code::solution!(21);
 use std::collections::HashMap;
 
 use advent_of_code::helpers::*;
-use itertools::Itertools;
+use itertools::{Either, Itertools};
 
 const NUMPAD: &str = r#"789
 456
@@ -14,7 +14,8 @@ const NUMPAD: &str = r#"789
 const DIRPAD: &str = r#" ^A
 <v>
 "#;
-type Fastest = HashMap<(GenericPoint<usize>, GenericPoint<usize>), Vec<String>>;
+type Fastest =
+    HashMap<(GenericPoint<usize>, GenericPoint<usize>), Either<[String; 2], [String; 1]>>;
 
 fn compute_fastest(pad: &str) -> Fastest {
     use Direction::*;
@@ -22,32 +23,36 @@ fn compute_fastest(pad: &str) -> Fastest {
     let mut output = HashMap::new();
     for from in pad.points() {
         for to in pad.points() {
-            if pad[from.cast()] == ' ' || pad[to.cast()] == ' ' {
+            if pad[from] == ' ' || pad[to] == ' ' {
                 continue;
             }
             if from == to {
-                output.insert((from.cast(), to.cast()), vec!["A".to_string()]);
+                output.insert((from, to), Either::Right(["A".to_string()]));
                 continue;
             }
 
-            let delta: SignedPoint = from - to;
-            let x = (if delta.x < 0 { Right } else { Left }, delta.x.abs());
-            let y = (if delta.y < 0 { Down } else { Up }, delta.y.abs());
+            let delta: SignedPoint = from.cast() - to.cast();
+            let x = (if delta.x < 0 { Right } else { Left })
+                .to_string()
+                .repeat(delta.x.abs() as usize);
+            let y = (if delta.y < 0 { Down } else { Up })
+                .to_string()
+                .repeat(delta.y.abs() as usize);
 
-            let x = x.0.to_string().repeat(x.1 as usize);
-            let y = y.0.to_string().repeat(y.1 as usize);
-            let choices = [format!("{x}{y}A"), format!("{y}{x}A")];
-            if choices[0] == choices[1] {
-                output.insert((from.cast(), to.cast()), vec![choices[0].clone()]);
-                continue;
-            }
+            let a = format!("{x}{y}A");
+            let b = format!("{y}{x}A");
 
-            let v = choices
-                .into_iter()
-                .filter(|path| !intersects_gap(path, from.cast(), &pad))
-                .collect_vec();
+            let path = match (
+                intersects_gap(&a, from, &pad),
+                intersects_gap(&b, from, &pad),
+            ) {
+                (true, true) => panic!("both paths intersect gap, which should be impossible"),
+                (false, true) => Either::Right([a]),
+                (true, false) => Either::Right([b]),
+                (false, false) => Either::Left([a, b]),
+            };
 
-            output.insert((from.cast(), to.cast()), v);
+            output.insert((from, to), path);
         }
     }
 
@@ -79,8 +84,10 @@ fn num_moves(s: String, depth: usize, cache: &mut HashMap<(String, usize), usize
         .into_iter()
         .circular_tuple_windows()
         .map(|(from, to)| {
-            fastest[&(from.cast(), to.cast())]
-                .iter()
+            fastest[&(from, to)]
+                .as_ref()
+                .into_iter()
+                .into_inner()
                 .map(|path| num_moves(path.to_string(), depth - 1, cache))
                 .min()
                 .expect("fastest.len() != 0")
@@ -119,31 +126,31 @@ pub fn part_two(input: &str) -> Option<usize> {
     )
 }
 
-fn parse(input: &str) -> (Vec<SignedPoint>, Fastest) {
+fn parse(input: &str) -> (Vec<Point>, Fastest) {
     let (a_coord, fastest) = if input.chars().any(|c| c.is_ascii_digit()) {
-        (SignedPoint::new(2, 3), compute_fastest(NUMPAD))
+        (Point::new(2, 3), compute_fastest(NUMPAD))
     } else {
-        (SignedPoint::new(2, 0), compute_fastest(DIRPAD))
+        (Point::new(2, 0), compute_fastest(DIRPAD))
     };
 
     (
         input
             .chars()
             .map(|c| match c {
-                '7' => SignedPoint::new(0, 0),
-                '8' => SignedPoint::new(1, 0),
-                '9' => SignedPoint::new(2, 0),
-                '4' => SignedPoint::new(0, 1),
-                '5' => SignedPoint::new(1, 1),
-                '6' => SignedPoint::new(2, 1),
-                '1' => SignedPoint::new(0, 2),
-                '2' => SignedPoint::new(1, 2),
-                '3' => SignedPoint::new(2, 2),
-                '0' => SignedPoint::new(1, 3),
-                '^' => SignedPoint::new(1, 0),
-                '<' => SignedPoint::new(0, 1),
-                'v' => SignedPoint::new(1, 1),
-                '>' => SignedPoint::new(2, 1),
+                '7' => Point::new(0, 0),
+                '8' => Point::new(1, 0),
+                '9' => Point::new(2, 0),
+                '4' => Point::new(0, 1),
+                '5' => Point::new(1, 1),
+                '6' => Point::new(2, 1),
+                '1' => Point::new(0, 2),
+                '2' => Point::new(1, 2),
+                '3' => Point::new(2, 2),
+                '0' => Point::new(1, 3),
+                '^' => Point::new(1, 0),
+                '<' => Point::new(0, 1),
+                'v' => Point::new(1, 1),
+                '>' => Point::new(2, 1),
                 'A' => a_coord,
                 c => panic!("unknown char {c}"),
             })
