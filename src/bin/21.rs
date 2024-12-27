@@ -76,7 +76,7 @@ fn num_moves(s: &str, depth: usize) -> usize {
         .into_iter()
         .circular_tuple_windows()
         .map(|(from, to)| {
-            fastest[&dbg!((from.cast(), to.cast()))]
+            fastest[&(from.cast(), to.cast())]
                 .iter()
                 .map(|path| num_moves(path, depth - 1))
                 .min()
@@ -86,7 +86,23 @@ fn num_moves(s: &str, depth: usize) -> usize {
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
-    Some(input.lines().map(|l| num_moves(l, 2)).sum())
+    Some(
+        input
+            .trim()
+            .lines()
+            .map(|l| (num_moves(l, 3)) * (l[..l.len() - 1].parse::<usize>().unwrap()))
+            .sum(),
+    )
+}
+
+pub fn part_two(input: &str) -> Option<usize> {
+    Some(
+        input
+            .trim()
+            .lines()
+            .map(|l| (num_moves(l, 26)) * (l[..l.len() - 1].parse::<usize>().unwrap()))
+            .sum(),
+    )
 }
 
 fn parse(input: &str) -> (Vec<SignedPoint>, Fastest) {
@@ -120,10 +136,6 @@ fn parse(input: &str) -> (Vec<SignedPoint>, Fastest) {
             .collect_vec(),
         fastest,
     )
-}
-
-pub fn part_two(input: &str) -> Option<usize> {
-    None
 }
 
 #[cfg(test)]
@@ -162,5 +174,11 @@ mod tests {
             intersects_gap(path, start, &Grid::from_chars(pad)),
             intersects
         );
+    }
+
+    #[test]
+    fn test_part_one() {
+        let result = part_one(&advent_of_code::template::read_file("examples", DAY));
+        assert_eq!(result, Some(126384));
     }
 }
