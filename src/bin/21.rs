@@ -3,6 +3,7 @@ advent_of_code::solution!(21);
 use std::collections::HashMap;
 
 use advent_of_code::helpers::*;
+use cached::proc_macro::cached;
 use itertools::Itertools;
 
 const NUMPAD: &str = r#"789
@@ -66,8 +67,9 @@ fn intersects_gap(path: &str, mut point: Point, grid: &Grid<char>) -> bool {
     false
 }
 
-fn num_moves(s: &str, depth: usize) -> usize {
-    let (parsed, fastest) = parse(s);
+#[cached]
+fn num_moves(s: String, depth: usize) -> usize {
+    let (parsed, fastest) = parse(&s);
     if depth == 0 {
         return s.len();
     }
@@ -78,7 +80,7 @@ fn num_moves(s: &str, depth: usize) -> usize {
         .map(|(from, to)| {
             fastest[&(from.cast(), to.cast())]
                 .iter()
-                .map(|path| num_moves(path, depth - 1))
+                .map(|path| num_moves(path.to_string(), depth - 1))
                 .min()
                 .expect("fastest.len() != 0")
         })
@@ -90,7 +92,7 @@ pub fn part_one(input: &str) -> Option<usize> {
         input
             .trim()
             .lines()
-            .map(|l| (num_moves(l, 3)) * (l[..l.len() - 1].parse::<usize>().unwrap()))
+            .map(|l| (num_moves(l.to_string(), 3)) * (l[..l.len() - 1].parse::<usize>().unwrap()))
             .sum(),
     )
 }
@@ -100,7 +102,7 @@ pub fn part_two(input: &str) -> Option<usize> {
         input
             .trim()
             .lines()
-            .map(|l| (num_moves(l, 26)) * (l[..l.len() - 1].parse::<usize>().unwrap()))
+            .map(|l| (num_moves(l.to_string(), 26)) * (l[..l.len() - 1].parse::<usize>().unwrap()))
             .sum(),
     )
 }
