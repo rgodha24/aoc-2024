@@ -3,7 +3,6 @@ advent_of_code::solution!(21);
 use std::collections::HashMap;
 
 use advent_of_code::helpers::*;
-use cached::proc_macro::cached;
 use itertools::Itertools;
 
 const NUMPAD: &str = r#"789
@@ -67,42 +66,55 @@ fn intersects_gap(path: &str, mut point: Point, grid: &Grid<char>) -> bool {
     false
 }
 
-#[cached]
-fn num_moves(s: String, depth: usize) -> usize {
+fn num_moves(s: String, depth: usize, cache: &mut HashMap<(String, usize), usize>) -> usize {
+    if let Some(moves) = cache.get(&(s.clone(), depth)) {
+        return *moves;
+    }
     let (parsed, fastest) = parse(&s);
     if depth == 0 {
         return s.len();
     }
 
-    parsed
+    let moves = parsed
         .into_iter()
         .circular_tuple_windows()
         .map(|(from, to)| {
             fastest[&(from.cast(), to.cast())]
                 .iter()
-                .map(|path| num_moves(path.to_string(), depth - 1))
+                .map(|path| num_moves(path.to_string(), depth - 1, cache))
                 .min()
                 .expect("fastest.len() != 0")
         })
-        .sum()
+        .sum();
+
+    cache.insert((s, depth), moves);
+    moves
 }
 
 pub fn part_one(input: &str) -> Option<usize> {
+    let mut cache = HashMap::new();
     Some(
         input
             .trim()
             .lines()
-            .map(|l| (num_moves(l.to_string(), 3)) * (l[..l.len() - 1].parse::<usize>().unwrap()))
+            .map(|l| {
+                (num_moves(l.to_string(), 3, &mut cache))
+                    * (l[..l.len() - 1].parse::<usize>().unwrap())
+            })
             .sum(),
     )
 }
 
 pub fn part_two(input: &str) -> Option<usize> {
+    let mut cache = HashMap::new();
     Some(
         input
             .trim()
             .lines()
-            .map(|l| (num_moves(l.to_string(), 26)) * (l[..l.len() - 1].parse::<usize>().unwrap()))
+            .map(|l| {
+                (num_moves(l.to_string(), 26, &mut cache))
+                    * (l[..l.len() - 1].parse::<usize>().unwrap())
+            })
             .sum(),
     )
 }
@@ -160,7 +172,8 @@ mod tests {
     #[case("456A", 64, 3)]
     #[case("379A", 64, 3)]
     fn test_solve(#[case] input: &str, #[case] output_len: usize, #[case] depth: usize) {
-        assert_eq!(num_moves(input.to_string(), depth), output_len);
+        let mut cache = HashMap::new();
+        assert_eq!(num_moves(input.to_string(), depth, &mut cache), output_len);
     }
 
     #[rstest]
