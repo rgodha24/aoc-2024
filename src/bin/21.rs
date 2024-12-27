@@ -160,7 +160,7 @@ mod tests {
     #[case("456A", 64, 3)]
     #[case("379A", 64, 3)]
     fn test_solve(#[case] input: &str, #[case] output_len: usize, #[case] depth: usize) {
-        assert_eq!(num_moves(input, depth), output_len);
+        assert_eq!(num_moves(input.to_string(), depth), output_len);
     }
 
     #[rstest]
