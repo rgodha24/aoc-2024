@@ -1,76 +1,99 @@
 advent_of_code::solution!(21);
 
-use std::collections::VecDeque;
+use std::collections::HashMap;
 
 use advent_of_code::helpers::*;
 use itertools::Itertools;
 
-const NUMPAD: &str = r#"
-789
+const NUMPAD: &str = r#"789
 456
 123
  0A
 "#;
 
-const DIRPAD: &str = r#"
- ^A
+const DIRPAD: &str = r#" ^A
 <v>
 "#;
+type Fastest = HashMap<(GenericPoint<usize>, GenericPoint<usize>), Vec<String>>;
 
-fn compute_fastest(pad: &str) -> Grid<Grid<Vec<String>>> {
-    let pad: Grid<char> = Grid::from_chars(pad.trim());
-    let mut output = pad.map(|_, _| pad.empty_sized());
-    for (from, to) in pad.points().collect_vec().into_iter().tuple_combinations() {
-        if pad[from] == ' ' || pad[to] == ' ' {
-            output[from][to] = vec![];
-        }
-        if from == to {
-            output[from][to] = vec!["A".to_string()];
-        }
-        println!("{from} {to}");
-
-        let mut q = VecDeque::from([(from, String::new())]);
-        let mut optimal = usize::MAX;
-        let mut possibilities = Vec::new();
-        'upper: while let Some((p, mut moves)) = q.pop_front() {
-            for direction in Direction::all() {
-                let neighbor = p + direction;
-                match pad.get(neighbor) {
-                    None | Some(' ') => {}
-                    Some(_) => {
-                        if neighbor == to {
-                        } else {
-                        }
-                        let mut s = s.clone();
-                        s.push(direction.into());
-                        q.push_back((neighbor.cast(), s));
-                    }
-                }
+fn compute_fastest(pad: &str) -> Fastest {
+    use Direction::*;
+    let pad: Grid<char> = Grid::from_chars(pad);
+    let mut output = HashMap::new();
+    for from in pad.points() {
+        for to in pad.points() {
+            if pad[from.cast()] == ' ' || pad[to.cast()] == ' ' {
+                continue;
             }
-        }
+            if from == to {
+                output.insert((from.cast(), to.cast()), vec!["A".to_string()]);
+                continue;
+            }
 
-        println!("{from} {to} {possibilities:?}");
-        output[from][to] = possibilities;
+            let delta: SignedPoint = from - to;
+            let x = (if delta.x < 0 { Right } else { Left }, delta.x.abs());
+            let y = (if delta.y < 0 { Down } else { Up }, delta.y.abs());
+
+            let x = x.0.to_string().repeat(x.1 as usize);
+            let y = y.0.to_string().repeat(y.1 as usize);
+            let choices = [format!("{x}{y}A"), format!("{y}{x}A")];
+            if choices[0] == choices[1] {
+                output.insert((from.cast(), to.cast()), vec![choices[0].clone()]);
+                continue;
+            }
+
+            let v = choices
+                .into_iter()
+                .filter(|path| !intersects_gap(path, from.cast(), &pad))
+                .collect_vec();
+
+            output.insert((from.cast(), to.cast()), v);
+        }
     }
 
     output
 }
 
-pub fn part_one(input: &str) -> Option<usize> {
-    let num_fastest = compute_fastest(NUMPAD);
-    println!("{:?}", num_fastest);
-    let mut sum = 0;
-    for l in input.lines() {
-        sum += l[..(l.len() - 1)].parse::<usize>().unwrap() * solve(l, 3);
+fn intersects_gap(path: &str, mut point: Point, grid: &Grid<char>) -> bool {
+    // remove the A
+    let path = &path[..path.len() - 1];
+    for d in path.chars().map(Direction::from) {
+        point += d;
+        if grid[point] == ' ' {
+            return true;
+        }
     }
-    Some(sum)
+    false
 }
 
-fn parse(input: &str) -> (Vec<SignedPoint>, SignedPoint) {
-    let a_coord = if input.chars().any(|c| c.is_ascii_digit()) {
-        SignedPoint::new(2, 3)
+fn num_moves(s: &str, depth: usize) -> usize {
+    let (parsed, fastest) = parse(s);
+    if depth == 0 {
+        return s.len();
+    }
+
+    parsed
+        .into_iter()
+        .circular_tuple_windows()
+        .map(|(from, to)| {
+            fastest[&dbg!((from.cast(), to.cast()))]
+                .iter()
+                .map(|path| num_moves(path, depth - 1))
+                .min()
+                .expect("fastest.len() != 0")
+        })
+        .sum()
+}
+
+pub fn part_one(input: &str) -> Option<usize> {
+    Some(input.lines().map(|l| num_moves(l, 2)).sum())
+}
+
+fn parse(input: &str) -> (Vec<SignedPoint>, Fastest) {
+    let (a_coord, fastest) = if input.chars().any(|c| c.is_ascii_digit()) {
+        (SignedPoint::new(2, 3), compute_fastest(NUMPAD))
     } else {
-        SignedPoint::new(2, 0)
+        (SignedPoint::new(2, 0), compute_fastest(DIRPAD))
     };
 
     (
@@ -95,78 +118,9 @@ fn parse(input: &str) -> (Vec<SignedPoint>, SignedPoint) {
                 c => panic!("unknown char {c}"),
             })
             .collect_vec(),
-        a_coord,
+        fastest,
     )
 }
-
-fn direction_as_coord(direction: Direction) -> SignedPoint {
-    match direction {
-        Up => SignedPoint::new(1, 0),
-        Left => SignedPoint::new(0, 1),
-        Down => SignedPoint::new(1, 1),
-        Right => SignedPoint::new(2, 1),
-    }
-}
-
-fn distance(from: SignedPoint, to: SignedPoint, depth: usize, activate: SignedPoint) -> usize {
-    let gap = activate - SignedPoint::new(2, 0);
-    if from == gap || to == gap {
-        return usize::MAX;
-    }
-    if depth == 0 {
-        return (from.manhattan_distance(&to).unsigned_abs()) as usize;
-    }
-
-    let delta = to - from;
-    let (direction, amt) = match (delta.x == 0, delta.y == 0) {
-        (true, true) => {
-            // e.g. from == to
-            return 0;
-        }
-        (true, false) => {
-            let direction = if delta.y > 0 { Up } else { Down };
-            (direction, delta.y.abs() as usize)
-        }
-        (false, true) => {
-            let direction = if delta.x > 0 { Left } else { Right };
-            (direction, delta.x.abs() as usize)
-        }
-        (false, false) => {
-            let a = from + SignedPoint::new(delta.x, 0);
-            let b = from + SignedPoint::new(0, delta.y);
-            let a_cost = (distance(from, a, depth, activate))
-                .checked_add(distance(a, to, depth, activate))
-                .unwrap_or(usize::MAX);
-            let b_cost = (distance(from, b, depth, activate))
-                .checked_add(distance(b, to, depth, activate))
-                .unwrap_or(usize::MAX);
-
-            return a_cost.min(b_cost);
-        }
-    };
-    // println!("direction {direction} amt {amt}");
-    let coord = direction_as_coord(direction);
-
-    // if we're going downwards in depth, activate is always in the numpad position
-    distance(activate, coord, depth - 1, SignedPoint::new(0, 2))
-        + amt
-        + distance(coord, activate, depth - 1, SignedPoint::new(0, 2))
-}
-
-fn solve(s: &str, depth: usize) -> usize {
-    let (coords, a) = parse(s);
-
-    println!("activate = {a}");
-
-    coords
-        .into_iter()
-        .circular_tuple_windows()
-        .inspect(|(from, to)| println!("inputting from {from} to {to}!"))
-        .map(|(from, to)| dbg!(distance(from, to, depth - 1, a) + 1))
-        .sum()
-}
-
-use Direction::*;
 
 pub fn part_two(input: &str) -> Option<usize> {
     None
@@ -192,6 +146,21 @@ mod tests {
     #[case("456A", 64, 3)]
     #[case("379A", 64, 3)]
     fn test_solve(#[case] input: &str, #[case] output_len: usize, #[case] depth: usize) {
-        assert_eq!(solve(input, depth), output_len);
+        assert_eq!(num_moves(input, depth), output_len);
+    }
+
+    #[rstest]
+    #[case("<<v", Point::new(2, 0), DIRPAD, true)]
+    #[case("v<<", Point::new(2, 0), DIRPAD, false)]
+    fn test_intersects_gap(
+        #[case] path: &str,
+        #[case] start: Point,
+        #[case] pad: &str,
+        #[case] intersects: bool,
+    ) {
+        assert_eq!(
+            intersects_gap(path, start, &Grid::from_chars(pad)),
+            intersects
+        );
     }
 }
