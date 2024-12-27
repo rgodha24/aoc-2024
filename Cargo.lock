@@ -25,6 +25,7 @@ dependencies = [
  "chrono",
  "derive_more",
  "dhat",
+ "either",
  "itertools",
  "mini-matrix",
  "num",
