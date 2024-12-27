@@ -40,3 +40,5 @@ mini-matrix = "0.1.6"
 derive_more = { version = "1.0.0", features = ["full"] }
 rstest = "0.23.0"
 rayon = "1.10.0"
+bitvec_simd = "0.20.5"
+rustc-hash = "2.1.0"
