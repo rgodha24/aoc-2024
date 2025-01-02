@@ -4,19 +4,31 @@ use std::collections::{HashMap, HashSet};
 use advent_of_code::helpers::*;
 use indicatif::*;
 use itertools::Itertools;
-use num::BigInt;
-use rayon::prelude::*;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq)]
 enum Register<'a> {
     Const(bool),
     Op(&'a str, Op, &'a str),
 }
-#[derive(Debug, Clone)]
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 enum Op {
     And,
     Xor,
     Or,
+}
+
+impl PartialEq for Register<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Register::Const(l), Register::Const(r)) => l == r,
+            (Register::Op(l1, lop, l2), Register::Op(r1, rop, r2)) => {
+                // a ^ b == b ^ a, a & b == b & a, a | b == b | a
+                lop == rop && ((l1 == r1 && l2 == r2) | (l1 == r2 && l2 == r1))
+            }
+            _ => false,
+        }
+    }
 }
 
 impl Register<'_> {
@@ -52,17 +64,6 @@ impl Register<'_> {
                 }
             }
         })
-    }
-    fn children<'a>(&self, registers: &'a HashMap<&'a str, Register>) -> Vec<String> {
-        match self {
-            Register::Const(_) => vec![],
-            Register::Op(r1, _, r2) => {
-                let mut v = vec![r1.to_string(), r2.to_string()];
-                v.extend_from_slice(&registers[r1].children(registers));
-                v.extend_from_slice(&registers[r2].children(registers));
-                v
-            }
-        }
     }
 }
 
@@ -113,6 +114,20 @@ pub fn part_one(input: &str) -> Option<u64> {
     Some(answer)
 }
 
+/// basically, we're trying to create the correct implementation of a full adder
+/// a full adder is a function like this, using the terminology of the problem,
+/// where `c` is a variable for the "carried" bit
+/// (z_n, c_{n+1}) = add(x_n, y_n, c_n)
+/// where z and c_{n+1} are
+/// z = c_n ^ (x_n ^ y_n)
+/// c_{n+1} = (x_n & y_n) | (c_n & x_n ^ y_n)
+///
+/// we can assign these bit combinations variable names
+/// a := x_n ^ y_n, b := x_n & y_n, d := c_n & a
+///
+/// and set z_n := c_n ^ a, and c_{n+1} := b | d
+///
+/// if we store the registers we expect to find for the zs and cs,
 pub fn part_two(input: &str) -> Option<String> {
     let (values, ops) = input.split_once("\n\n").unwrap();
     let mut registers: HashMap<&str, Register> = HashMap::new();
