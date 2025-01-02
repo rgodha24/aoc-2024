@@ -4,12 +4,6 @@ use std::collections::HashMap;
 use advent_of_code::helpers::*;
 use itertools::Itertools;
 
-#[derive(Debug, Clone)]
-struct Register<'a> {
-    kind: RegisterKind<'a>,
-    name: &'a str,
-}
-
 macro_rules! name {
     ($c:literal, $n: expr) => {
         format!("{}{:02}", $c, $n).as_str()
@@ -17,7 +11,7 @@ macro_rules! name {
 }
 
 #[derive(Debug, Clone, Eq)]
-enum RegisterKind<'a> {
+enum Register<'a> {
     Const(bool),
     Op(&'a str, Op, &'a str),
 }
@@ -29,11 +23,11 @@ enum Op {
     Or,
 }
 
-impl PartialEq for RegisterKind<'_> {
+impl PartialEq for Register<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (RegisterKind::Const(l), RegisterKind::Const(r)) => l == r,
-            (RegisterKind::Op(l1, lop, l2), RegisterKind::Op(r1, rop, r2)) => {
+            (Register::Const(l), Register::Const(r)) => l == r,
+            (Register::Op(l1, lop, l2), Register::Op(r1, rop, r2)) => {
                 // a ^ b == b ^ a, a & b == b & a, a | b == b | a, so switching the direction still
                 // means equal registers
                 lop == rop && ((l1 == r1 && l2 == r2) | (l1 == r2 && l2 == r1))
@@ -45,9 +39,9 @@ impl PartialEq for RegisterKind<'_> {
 
 impl Register<'_> {
     fn value<'a>(&self, registers: &HashMap<&'a str, Register>) -> bool {
-        match &self.kind {
-            RegisterKind::Const(b) => *b,
-            RegisterKind::Op(r1, op, r2) => {
+        match &self {
+            Register::Const(b) => *b,
+            Register::Op(r1, op, r2) => {
                 let r1 = registers.get(r1).cloned().unwrap().value(registers);
                 let r2 = registers.get(r2).cloned().unwrap().value(registers);
 
@@ -66,32 +60,23 @@ fn parse(input: &str) -> (HashMap<&str, Register>, usize) {
     let mut registers = HashMap::new();
     for v in values.lines() {
         let (register, b) = v.split_once(": ").unwrap();
-        registers.insert(
-            register,
-            Register {
-                kind: RegisterKind::Const(b == "1"),
-                name: register,
-            },
-        );
+        registers.insert(register, Register::Const(b == "1"));
     }
 
     for o in ops.trim().lines() {
         let (r1, op, r2, _, output) = o.split_whitespace().collect_tuple().unwrap();
         registers.insert(
             output,
-            Register {
-                kind: RegisterKind::Op(
-                    r1,
-                    match op {
-                        "AND" => Op::And,
-                        "XOR" => Op::Xor,
-                        "OR" => Op::Or,
-                        s => panic!("unknown op {s}"),
-                    },
-                    r2,
-                ),
-                name: output,
-            },
+            Register::Op(
+                r1,
+                match op {
+                    "AND" => Op::And,
+                    "XOR" => Op::Xor,
+                    "OR" => Op::Or,
+                    s => panic!("unknown op {s}"),
+                },
+                r2,
+            ),
         );
     }
     let nbits = (0..100)
@@ -129,7 +114,7 @@ pub fn part_one(input: &str) -> Option<u64> {
 ///
 /// if we store the registers we expect to find for the zs and cs, we can find the incorrect gates.
 pub fn part_two(input: &str) -> Option<String> {
-    let registers = parse(input);
+    let (registers, nbits) = parse(input);
 
     todo!()
 }
