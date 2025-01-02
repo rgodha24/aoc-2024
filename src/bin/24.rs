@@ -1,12 +1,23 @@
 advent_of_code::solution!(24);
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use advent_of_code::helpers::*;
-use indicatif::*;
 use itertools::Itertools;
 
+#[derive(Debug, Clone)]
+struct Register<'a> {
+    kind: RegisterKind<'a>,
+    name: &'a str,
+}
+
+macro_rules! name {
+    ($c:literal, $n: expr) => {
+        format!("{}{:02}", $c, $n).as_str()
+    };
+}
+
 #[derive(Debug, Clone, Eq)]
-enum Register<'a> {
+enum RegisterKind<'a> {
     Const(bool),
     Op(&'a str, Op, &'a str),
 }
@@ -18,12 +29,13 @@ enum Op {
     Or,
 }
 
-impl PartialEq for Register<'_> {
+impl PartialEq for RegisterKind<'_> {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (Register::Const(l), Register::Const(r)) => l == r,
-            (Register::Op(l1, lop, l2), Register::Op(r1, rop, r2)) => {
-                // a ^ b == b ^ a, a & b == b & a, a | b == b | a
+            (RegisterKind::Const(l), RegisterKind::Const(r)) => l == r,
+            (RegisterKind::Op(l1, lop, l2), RegisterKind::Op(r1, rop, r2)) => {
+                // a ^ b == b ^ a, a & b == b & a, a | b == b | a, so switching the direction still
+                // means equal registers
                 lop == rop && ((l1 == r1 && l2 == r2) | (l1 == r2 && l2 == r1))
             }
             _ => false,
@@ -32,30 +44,12 @@ impl PartialEq for Register<'_> {
 }
 
 impl Register<'_> {
-    fn value<'a>(
-        &self,
-        registers: &HashMap<&'a str, Register>,
-        visited: &mut Option<&'a mut HashSet<String>>,
-    ) -> Option<bool> {
-        Some(match self {
-            Register::Const(b) => *b,
-            Register::Op(r1, op, r2) => {
-                if visited.as_mut().is_some_and(|visited| {
-                    visited.insert(r1.to_string()) || visited.insert(r2.to_string())
-                }) {
-                    return None;
-                }
-
-                let r1 = registers
-                    .get(r1)
-                    .cloned()
-                    .unwrap()
-                    .value(registers, visited)?;
-                let r2 = registers
-                    .get(r2)
-                    .cloned()
-                    .unwrap()
-                    .value(registers, visited)?;
+    fn value<'a>(&self, registers: &HashMap<&'a str, Register>) -> bool {
+        match &self.kind {
+            RegisterKind::Const(b) => *b,
+            RegisterKind::Op(r1, op, r2) => {
+                let r1 = registers.get(r1).cloned().unwrap().value(registers);
+                let r2 = registers.get(r2).cloned().unwrap().value(registers);
 
                 match op {
                     Op::And => r1 & r2,
@@ -63,53 +57,59 @@ impl Register<'_> {
                     Op::Or => r1 | r2,
                 }
             }
-        })
+        }
     }
 }
 
-pub fn part_one(input: &str) -> Option<u64> {
+fn parse(input: &str) -> (HashMap<&str, Register>, usize) {
     let (values, ops) = input.split_once("\n\n").unwrap();
-    let mut registers: HashMap<&str, Register> = HashMap::new();
+    let mut registers = HashMap::new();
     for v in values.lines() {
         let (register, b) = v.split_once(": ").unwrap();
-        registers.insert(register, Register::Const(b == "1"));
+        registers.insert(
+            register,
+            Register {
+                kind: RegisterKind::Const(b == "1"),
+                name: register,
+            },
+        );
     }
 
     for o in ops.trim().lines() {
         let (r1, op, r2, _, output) = o.split_whitespace().collect_tuple().unwrap();
         registers.insert(
             output,
-            Register::Op(
-                r1,
-                match op {
-                    "AND" => Op::And,
-                    "XOR" => Op::Xor,
-                    "OR" => Op::Or,
-                    s => panic!("unknown op {s}"),
-                },
-                r2,
-            ),
+            Register {
+                kind: RegisterKind::Op(
+                    r1,
+                    match op {
+                        "AND" => Op::And,
+                        "XOR" => Op::Xor,
+                        "OR" => Op::Or,
+                        s => panic!("unknown op {s}"),
+                    },
+                    r2,
+                ),
+                name: output,
+            },
         );
     }
+    let nbits = (0..100)
+        .take_while(|n| registers.contains_key(name!('z', n)))
+        .last()
+        .unwrap();
+
+    (registers, nbits)
+}
+
+pub fn part_one(input: &str) -> Option<u64> {
+    let (registers, nbits) = parse(input);
 
     let mut answer = 0u64;
-    for z in 0..99 {
-        if let Some(r) = registers.get(format!("z{z:02}").as_str()).cloned() {
-            answer += (if r.value(&registers, &mut None).unwrap() {
-                1
-            } else {
-                0
-            }) << z;
-        } else {
-            break;
-        }
+    for n in 0..=nbits {
+        let r = registers[name!('z', n)].clone();
+        answer |= (if r.value(&registers) { 1 } else { 0 }) << n;
     }
-
-    dbg!(registers
-        .values()
-        .filter(|r| matches!(r, Register::Op(..)))
-        .collect_vec()
-        .len());
 
     Some(answer)
 }
@@ -127,165 +127,11 @@ pub fn part_one(input: &str) -> Option<u64> {
 ///
 /// and set z_n := c_n ^ a, and c_{n+1} := b | d
 ///
-/// if we store the registers we expect to find for the zs and cs,
+/// if we store the registers we expect to find for the zs and cs, we can find the incorrect gates.
 pub fn part_two(input: &str) -> Option<String> {
-    let (values, ops) = input.split_once("\n\n").unwrap();
-    let mut registers: HashMap<&str, Register> = HashMap::new();
-    for v in values.lines() {
-        let (register, b) = v.split_once(": ").unwrap();
-        registers.insert(register, Register::Const(b == "1"));
-    }
+    let registers = parse(input);
 
-    for o in ops.trim().lines() {
-        let (r1, op, r2, _, output) = o.split_whitespace().collect_tuple().unwrap();
-        registers.insert(
-            output,
-            Register::Op(
-                r1,
-                match op {
-                    "AND" => Op::And,
-                    "XOR" => Op::Xor,
-                    "OR" => Op::Or,
-                    s => panic!("unknown op {s}"),
-                },
-                r2,
-            ),
-        );
-    }
-
-    // no longer mutable
-    let registers = registers;
-
-    let x: u64 = (0..64)
-        .fold_while(0, |acc, n| {
-            use itertools::FoldWhile::{Continue, Done};
-            if let Some(r) = registers.get(format!("x{n:02}").as_str()).cloned() {
-                Continue(
-                    acc + ((if r.value(&registers, &mut None).unwrap() {
-                        1
-                    } else {
-                        0
-                    }) << n),
-                )
-            } else {
-                Done(acc)
-            }
-        })
-        .into_inner();
-    let y: u64 = (0..64)
-        .fold_while(0, |acc, n| {
-            use itertools::FoldWhile::{Continue, Done};
-            if let Some(r) = registers.get(format!("y{n:02}").as_str()).cloned() {
-                Continue(
-                    acc + ((if r.value(&registers, &mut None).unwrap() {
-                        1
-                    } else {
-                        0
-                    }) << n),
-                )
-            } else {
-                Done(acc)
-            }
-        })
-        .into_inner();
-
-    let expected_z = x + y;
-    let curr_z: u64 = (0..64)
-        .fold_while(0, |acc, n| {
-            use itertools::FoldWhile::{Continue, Done};
-            if let Some(r) = registers.get(format!("z{n:02}").as_str()).cloned() {
-                Continue(
-                    acc + ((if r.value(&registers, &mut None).unwrap() {
-                        1
-                    } else {
-                        0
-                    }) << n),
-                )
-            } else {
-                Done(acc)
-            }
-        })
-        .into_inner();
-
-    dbg!(expected_z, curr_z);
-    println!("exp {expected_z:b}");
-    println!("cur {curr_z:b}");
-
-    let (curr_zero, curr_one): (Vec<_>, Vec<_>) = (0..64)
-        .filter(|n| (expected_z ^ curr_z) & (0b1 << n) > 0)
-        .flat_map(|z| {
-            // let mut v = registers
-            //     .get(format!("z{z:02}").as_str())
-            //     .unwrap()
-            //     .children(&registers);
-            // v.push(format!("z{z:02}"));
-            // v
-            [format!("z{z:02}")]
-        })
-        .unique()
-        .partition(|reg| {
-            !registers
-                .get(reg.as_str())
-                .unwrap()
-                .value(&registers, &mut None)
-                .unwrap()
-        });
-
-    dbg!(&curr_zero);
-    dbg!(&curr_one);
-
-    let n = curr_zero.len() as u64;
-
-    curr_zero
-        .into_iter()
-        .tuple_combinations()
-        .progress_count((n) * (n - 1) * (n - 2) * (n - 3))
-        .find_map(|(s1, s3, s5, s7)| {
-            curr_one
-                .iter()
-                .tuple_combinations()
-                .find_map(|(s2, s4, s6, s8)| {
-                    let mut registers = registers.clone();
-                    macro_rules! swap {
-                        ($a:expr, $b:expr) => {
-                            let a = registers.get_mut($a.to_string().as_str()).unwrap() as *mut _;
-                            let b = registers.get_mut($b.to_string().as_str()).unwrap() as *mut _;
-                            unsafe { std::ptr::swap(a, b) };
-                        };
-                    }
-                    // println!("swapping {s1} {s2} {s3} {s4} {s5} {s6} {s7} {s8}");
-                    swap!(s1, s2);
-                    swap!(s3, s4);
-                    swap!(s5, s6);
-                    swap!(s7, s8);
-
-                    let z = (0..64)
-                        .fold_while(Some(0), |acc, n| {
-                            use itertools::FoldWhile::{Continue, Done};
-                            if let Some(r) = registers.get(format!("z{n:02}").as_str()).cloned() {
-                                let mut visited = HashSet::new();
-                                let val = match r.value(&registers, &mut Some(&mut visited)) {
-                                    Some(true) => 1,
-                                    Some(false) => 0,
-                                    None => {
-                                        return Done(None);
-                                    }
-                                };
-                                Continue(Some(acc.expect("cant be none") + (val << n)))
-                            } else {
-                                Done(acc)
-                            }
-                        })
-                        .into_inner()?;
-
-                    (z == expected_z).then_some(
-                        [&s1, s2, &s3, s4, &s5, s6, &s7, s8]
-                            .into_iter()
-                            .sorted()
-                            .join(","),
-                    )
-                })
-        })
+    todo!()
 }
 
 #[cfg(test)]
