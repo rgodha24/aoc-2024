@@ -1,8 +1,5 @@
 advent_of_code::solution!(16);
-use std::{
-    collections::{BinaryHeap, HashSet},
-    fmt::Display,
-};
+use std::collections::{BinaryHeap, HashSet};
 
 use advent_of_code::helpers::*;
 

@@ -31,21 +31,21 @@ impl Computer {
         while i < instructions.1 {
             let (instr, literal) = instructions.at(i);
             let combo = match literal {
-                n @ 0..=3 => n as usize,
+                n @ 0..=3 => n,
                 4 => a,
                 5 => b,
                 6 => c,
                 // we just assume we're not gonna use this lol
-                n => n as usize,
+                n => n,
             };
 
             i += 2;
 
             match instr {
                 // Adv
-                0 => a = a / (1 << combo),
+                0 => a /= 1 << combo,
                 // Bxl
-                1 => b = b ^ (literal as usize),
+                1 => b ^= literal,
                 // Bst
                 2 => b = combo & 0b111,
                 // Jnz
@@ -56,7 +56,7 @@ impl Computer {
                 }
                 // Bxc
                 4 => {
-                    b = b ^ c;
+                    b ^= c;
                 }
                 // Out
                 5 => {
@@ -137,7 +137,7 @@ impl Display for Instruction {
         write!(
             f,
             "{}",
-            (0..n).rev().map(|i| (output >> i * 3) & 0b111).join(",")
+            (0..n).rev().map(|i| (output >> (i * 3)) & 0b111).join(",")
         )
     }
 }

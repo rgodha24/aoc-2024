@@ -1,7 +1,6 @@
 advent_of_code::solution!(19);
 use std::collections::HashMap;
 
-use advent_of_code::helpers::*;
 use itertools::Itertools;
 
 fn patterns<'a>(
@@ -9,7 +8,7 @@ fn patterns<'a>(
     need: &'a str,
     cache: &mut HashMap<&'a str, usize>,
 ) -> usize {
-    if need.len() == 0 {
+    if need.is_empty() {
         return 1;
     }
     if let Some(n) = cache.get(need) {

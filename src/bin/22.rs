@@ -81,11 +81,18 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        let s = r#"1
+        std::thread::Builder::new()
+            .stack_size(64 * 64 * 64 * 1024)
+            .spawn(|| {
+                let s = r#"1
 2
 3
 2024"#;
-        let result = part_two(s);
-        assert_eq!(result, Some(23));
+                let result = part_two(s);
+                assert_eq!(result, Some(23));
+            })
+            .unwrap()
+            .join()
+            .unwrap();
     }
 }

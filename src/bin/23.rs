@@ -52,6 +52,7 @@ pub fn part_two(input: &str) -> Option<String> {
         .unwrap()
         .into_iter()
         .map(|n| unsafe { str::from_utf8_unchecked(&n.to_ne_bytes()) }.to_owned())
+        .sorted()
         .join(","),
     )
 }
