@@ -116,63 +116,10 @@ pub fn part_one(input: &str) -> Option<u64> {
 pub fn part_two(input: &str) -> Option<String> {
     let (registers, nbits) = parse(input);
 
-    // -1 because z_{nbits} == c_{nbits}
-    // let a_list = (0..=nbits)
-    //     .map(|n| {
-    //         registers
-    //             .iter()
-    //             .find(|&(_, v)| Register::Op(name!('x', n), Op::Xor, name!('y', n)) == *v)
-    //             .map(|(r, _)| r)
-    //             .unwrap_or(&"$$$")
-    //     })
-    //     .collect_vec();
-    //
-    // let b_list = (0..=nbits - 1)
-    //     .map(|n| {
-    //         registers
-    //             .iter()
-    //             .find(|&(_, v)| Register::Op(name!('x', n), Op::And, name!('y', n)) == *v)
-    //             .unwrap()
-    //             .0
-    //     })
-    //     .collect_vec();
-    //
-    // // starting at 1 because c_0 does not exist
-    // let mut c_list = vec!["$$$"];
-    // let mut d_list = vec![];
-    //
-    // for n in 0..=nbits - 1 {
-    //     d_list.push(
-    //         registers
-    //             .iter()
-    //             .find(|&(_, v)| Register::Op(c_list[n], Op::And, a_list[n]) == *v)
-    //             .map(|(r, _)| r)
-    //             .unwrap_or(a_list[n]),
-    //     );
-    //
-    // c_list.push(
-    //     registers
-    //         .iter()
-    //         .find(|&(_, v)| Register::Op(b_list[n], Op::Or, d_list[n]) == *v)
-    //         .map(|(r, _)| r)
-    //         .unwrap_or(b_list[n]),
-    // );
-    // }
-    //
-    // let z_list = (0..=nbits)
-    //     .map(|n| {
-    //         registers
-    //             .iter()
-    //             .find(|&(_, v)| Register::Op(c_list[n], Op::Xor, a_list[n]) == *v)
-    //             .map(|(r, _)| r)
-    //             .unwrap_or(a_list[n])
-    //     })
-    //     .collect_vec();
-
     let mut n = 0;
-    let mut c = &"$$$";
+    let mut c = "$$$".to_string();
 
-    while n <= nbits {
+    while n < nbits {
         let a = registers
             .iter()
             .find(|&(_, v)| Register::Op(name!('x', n), Op::Xor, name!('y', n)) == *v)
@@ -186,7 +133,7 @@ pub fn part_two(input: &str) -> Option<String> {
 
         let d = registers
             .iter()
-            .find(|&(_, v)| Register::Op(c, Op::And, a) == *v)
+            .find(|&(_, v)| Register::Op(&c, Op::And, a) == *v)
             .map(|(r, _)| r)
             .unwrap_or(a);
 
@@ -198,24 +145,26 @@ pub fn part_two(input: &str) -> Option<String> {
 
         let z = *registers
             .iter()
-            .find(|&(_, v)| Register::Op(c, Op::Xor, a) == *v)
+            .find(|&(_, v)| Register::Op(&c, Op::Xor, a) == *v)
             .map(|(r, _)| r)
             .unwrap_or(a);
 
         let expected_z = name!('z', n).to_string();
+        println!("{a} {b} {c} {d} {z}");
 
         if z == expected_z {
             n += 1;
-            c = next_c;
+            c = next_c.to_string();
             continue;
         }
 
-        println!("mismatching z {n}");
-        dbg!(a, b, c, d, z, expected_z);
+        // currently, i'm just manually switching these around until i get it working
+        println!("mismatching z{n}");
         break;
     }
 
-    todo!()
+    // TODO: stop doing this manually
+    todo!();
 }
 
 #[cfg(test)]
