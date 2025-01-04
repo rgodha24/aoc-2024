@@ -5,38 +5,28 @@ use itertools::Itertools;
 
 tiles!('#' => Filled, '.' => Empty);
 
-pub fn part_one(input: &str) -> Option<i64> {
+pub fn part_one(input: &str) -> Option<usize> {
     let (locks, keys): (Vec<_>, Vec<_>) = input
         .split("\n\n")
         .map(|grid| Grid::<Tile>::from_chars(grid))
         .partition_map(|grid| {
             let heights = grid
                 .cols()
-                .map(|v| v.into_iter().filter(|t| matches!(t, Tile::Filled)).count() - 1)
+                .map(|v| v.into_iter().filter(|t| matches!(t, Tile::Filled)).count())
                 .collect_vec();
-            dbg!(&heights);
+
             if matches!(grid[Point::new(0, 0)], Tile::Empty) {
-                Right(heights.into_iter().map(|h| grid.height() - h).collect_vec())
+                Right(heights)
             } else {
                 Left(heights)
             }
         });
 
-    let mut ans = 0;
-    for l in locks {
-        for k in &keys {
-            if l.iter().zip(k.into_iter()).all(|(l, k)| l != k) {
-                println!(
-                    "lock {} key {}",
-                    l.iter().map(|n| n.to_string()).join(", "),
-                    k.iter().map(|n| n.to_string()).join(", ")
-                );
-                ans += 1;
-            }
-        }
-    }
-
-    Some(ans)
+    Some(
+        itertools::iproduct!(locks, keys)
+            .filter(|(lock, key)| lock.iter().zip(key.iter()).all(|(l, k)| l + k < 8))
+            .count(),
+    )
 }
 
 pub fn part_two(input: &str) -> Option<i64> {
