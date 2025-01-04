@@ -1,7 +1,6 @@
 advent_of_code::solution!(24);
 use std::collections::HashMap;
 
-use advent_of_code::helpers::*;
 use itertools::Itertools;
 
 macro_rules! name {
@@ -38,7 +37,7 @@ impl PartialEq for Register<'_> {
 }
 
 impl Register<'_> {
-    fn value<'a>(&self, registers: &HashMap<&'a str, Register>) -> bool {
+    fn value(&self, registers: &HashMap<&str, Register>) -> bool {
         match &self {
             Register::Const(b) => *b,
             Register::Op(r1, op, r2) => {
@@ -190,11 +189,5 @@ x02 OR y02 -> z02"#,
     fn test_part_one(#[case] input: &str, #[case] output: u64) {
         let result = part_one(input);
         assert_eq!(result, Some(output));
-    }
-
-    #[test]
-    fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
     }
 }
